@@ -669,6 +669,37 @@ body {
 .task-card:nth-child(5) { animation-delay: 0.25s; }
 .task-card:nth-child(6) { animation-delay: 0.3s; }
 
+/* Holiday Card Styling */
+.holiday-card {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #fcd34d;
+}
+
+.holiday-card:hover {
+    border-color: #f59e0b;
+}
+
+.holiday-badge {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+    border-radius: 12px;
+    color: #92400e;
+}
+
+/* Completed Card Styling */
+.completed-card {
+    opacity: 0.8;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border-color: #86efac;
+}
+
+.completed-card:hover {
+    opacity: 1;
+}
+
 .card-header-top {
     display: flex;
     justify-content: space-between;

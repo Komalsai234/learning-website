@@ -333,13 +333,14 @@ function createTaskCard(task, weekIndex, taskIndex) {
     const isWeekend = task.day === 'Saturday' || task.day === 'Sunday';
     const isHoliday = task.isHoliday || false;
     
-    // Format date as "Feb 7", "Mar 10" format
+    // Format date as "24/02/26" format to match screenshot
     let displayDate = task.date;
     if (task.date && task.date.includes('-')) {
         const dateObj = new Date(task.date);
-        const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
-        const day = dateObj.getDate();
-        displayDate = `${month} ${day}`;
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = String(dateObj.getFullYear()).slice(-2);
+        displayDate = `${day}/${month}/${year}`;
     }
     
     // Format study time
@@ -372,7 +373,7 @@ function createTaskCard(task, weekIndex, taskIndex) {
         statusText = 'To Do';
     }
     
-    card.className = `day-card ${isWeekend ? 'weekend' : ''} ${isHoliday ? 'holiday-card' : ''} ${task.status === 'completed' ? 'completed-card' : ''}`;
+    card.className = `task-card ${isWeekend ? 'weekend' : ''} ${isHoliday ? 'holiday-card' : ''} ${task.status === 'completed' ? 'completed-card' : ''}`;
     
     // Holiday card layout (simplified - no time, no status, no description)
     if (isHoliday) {
@@ -398,11 +399,11 @@ function createTaskCard(task, weekIndex, taskIndex) {
             <div class="card-header-top">
                 <div class="date-info">
                     <div class="date">${displayDate}</div>
-                    <div class="day-name">${task.day}${task.hasMeet ? ' <span class="meet-badge">(Meet)</span>' : ''}</div>
+                    <div class="day-name">${task.day}${task.hasMeet ? ' <span class="meet-badge">📹 Meet</span>' : ''}</div>
                 </div>
                 <div class="card-top-right">
                     <div class="time-badge ${isWeekend ? 'weekend' : 'weekday'}">
-                        ${displayTime}
+                        ⏱ ${displayTime}
                     </div>
                     <button class="edit-btn-icon" onclick="openEditTaskModal(${weekIndex}, ${taskIndex})" title="Edit">
                         ✏️
