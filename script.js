@@ -10,8 +10,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    console.log('Firebase initialized successfully');
+} catch (error) {
+    console.error('Firebase initialization error:', error);
+    alert('Error connecting to Firebase. Please check the console.');
+}
 
 // Data structure
 let weeks = [];
@@ -21,6 +28,7 @@ let isLoading = true;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up...');
     setupEventListeners();
     updateCurrentDate();
     loadWeeksFromFirebase();
@@ -125,24 +133,44 @@ async function saveData() {
 // Save new week to Firebase
 async function saveWeekToFirebase(weekData) {
     try {
-        await db.collection('weeks').add({
+        console.log('Saving week to Firebase:', weekData);
+        const docRef = await db.collection('weeks').add({
             ...weekData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        console.log('Week saved successfully with ID:', docRef.id);
         showToast('Week created successfully!', '✅');
     } catch (error) {
         console.error('Error saving week:', error);
-        showToast('Error creating week. Please try again.', '❌');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        // Show more specific error messages
+        if (error.code === 'permission-denied') {
+            alert('Permission denied. Please make sure Firestore is enabled and security rules are set correctly.');
+        } else if (error.code === 'unavailable') {
+            alert('Firebase is unavailable. Please check your internet connection.');
+        } else {
+            alert('Error creating week: ' + error.message);
+        }
     }
 }
 
 // Update week in Firebase
 async function updateWeekInFirebase(weekId, weekData) {
     try {
+        console.log('Updating week in Firebase:', weekId, weekData);
         await db.collection('weeks').doc(weekId).update(weekData);
+        console.log('Week updated successfully');
     } catch (error) {
         console.error('Error updating week:', error);
-        showToast('Error updating week. Please try again.', '❌');
+        console.error('Error details:', error.code, error.message);
+        
+        if (error.code === 'permission-denied') {
+            alert('Permission denied. Please check Firestore security rules.');
+        } else {
+            alert('Error updating data: ' + error.message);
+        }
     }
 }
 
@@ -478,6 +506,13 @@ function saveNewWeek() {
     };
     
     console.log('Creating week:', newWeek);
+    console.log('Firebase db object:', db);
+    
+    // Check if Firebase is ready
+    if (!db) {
+        alert('Firebase is not initialized. Please refresh the page.');
+        return;
+    }
     
     // Save to Firebase instead of local array
     saveWeekToFirebase(newWeek);
@@ -544,6 +579,8 @@ function saveNewTask() {
     const isHoliday = document.getElementById('taskIsHoliday').checked;
     const hasMeet = document.getElementById('taskHasMeet').checked;
     
+    console.log('saveNewTask called for week index:', currentWeekId);
+    
     // Validate date
     if (!dateInput) {
         alert('Please select a date');
@@ -566,6 +603,18 @@ function saveNewTask() {
         }
     }
     
+    // Check if week exists
+    if (currentWeekId === null || !weeks[currentWeekId]) {
+        alert('Error: Week not found. Please refresh the page.');
+        return;
+    }
+    
+    // Check if Firebase is ready
+    if (!db) {
+        alert('Firebase is not initialized. Please refresh the page.');
+        return;
+    }
+    
     // Auto-set day based on date
     const selectedDate = new Date(dateInput);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -581,6 +630,8 @@ function saveNewTask() {
         status: isHoliday ? 'holiday' : 'todo'
     };
     
+    console.log('Adding task:', newTask);
+    
     // Update Firebase
     const week = weeks[currentWeekId];
     const updatedTasks = [...week.tasks, newTask];
@@ -588,7 +639,6 @@ function saveNewTask() {
     
     closeAddTaskModal();
     showToast('Task added successfully!', '✅');
-}
 }
 
 function openEditTaskModal(weekIndex, taskIndex) {
