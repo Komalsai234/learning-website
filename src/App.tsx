@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Week, Task, Toast, TaskStatus, Resource } from '@/types';
+import type { Week, Task, Toast, TaskStatus } from '@/types';
 import { api, initDataListener } from '@/api';
 import { Navbar } from '@/components/Navbar';
 import { Greeting } from '@/components/Greeting';
@@ -9,7 +9,6 @@ import { AddWeekModal } from '@/components/AddWeekModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
 import { EditTaskModal } from '@/components/EditTaskModal';
 import { StatusChangeModal } from '@/components/StatusChangeModal';
-import { ResourceModal } from '@/components/ResourceModal';
 import { ToastContainer } from '@/components/ToastContainer';
 import { EmptyState } from '@/components/EmptyState';
 import { Footer } from '@/components/Footer';
@@ -22,7 +21,6 @@ function App() {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
   const [currentWeekIndex, setCurrentWeekIndex] = useState<number | null>(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [viewingWeekIndex, setViewingWeekIndex] = useState<number | null>(null);
@@ -41,6 +39,23 @@ function App() {
     // Cleanup on unmount
     return () => {
       unsubscribe();
+    };
+  }, []);
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.viewingWeek !== undefined) {
+        setViewingWeekIndex(event.state.viewingWeek);
+      } else {
+        setViewingWeekIndex(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
@@ -90,46 +105,15 @@ function App() {
 
   const handleViewTasks = (weekIndex: number) => {
     setViewingWeekIndex(weekIndex);
+    // Push state to browser history
+    window.history.pushState({ viewingWeek: weekIndex }, '', `#week-${weekIndex}`);
   };
 
   const handleCloseTasksView = () => {
     setViewingWeekIndex(null);
-  };
-
-  const handleManageResources = (weekIndex: number) => {
-    setCurrentWeekIndex(weekIndex);
-    setIsResourceModalOpen(true);
-  };
-
-  const handleAddResource = async (title: string, url: string) => {
-    if (currentWeekIndex !== null) {
-      try {
-        const week = weeks[currentWeekIndex];
-        const newResource: Resource = {
-          id: Date.now().toString(),
-          title,
-          url,
-          addedAt: new Date().toISOString()
-        };
-        await api.addResource(week.id, newResource);
-        showToast('Resource added!', '📚');
-      } catch (error) {
-        showToast('Failed to add resource', '❌');
-      }
-    }
-  };
-
-  const handleDeleteResource = async (resourceId: string) => {
-    if (currentWeekIndex !== null) {
-      if (confirm('Are you sure you want to delete this resource?')) {
-        try {
-          const week = weeks[currentWeekIndex];
-          await api.deleteResource(week.id, resourceId);
-          showToast('Resource deleted', '🗑️');
-        } catch (error) {
-          showToast('Failed to delete resource', '❌');
-        }
-      }
+    // Go back in browser history
+    if (window.history.state?.viewingWeek !== undefined) {
+      window.history.back();
     }
   };
 
@@ -209,7 +193,6 @@ function App() {
     ? weeks[currentWeekIndex]?.tasks[currentTaskIndex] 
     : null;
   const viewingWeek = viewingWeekIndex !== null ? weeks[viewingWeekIndex] : null;
-  const currentWeek = currentWeekIndex !== null ? weeks[currentWeekIndex] : null;
 
   // Check if we're viewing tasks (to hide navbar)
   const isViewingTasks = viewingWeekIndex !== null && viewingWeek;
@@ -261,7 +244,6 @@ function App() {
                   weekIndex={index}
                   onViewTasks={handleViewTasks}
                   onDeleteWeek={handleDeleteWeek}
-                  onManageResources={handleManageResources}
                 />
               ))}
             </div>
@@ -306,17 +288,6 @@ function App() {
           setCurrentTaskIndex(null);
         }}
         onChangeStatus={handleChangeStatus}
-      />
-
-      <ResourceModal
-        isOpen={isResourceModalOpen}
-        onClose={() => {
-          setIsResourceModalOpen(false);
-          setCurrentWeekIndex(null);
-        }}
-        resources={currentWeek?.resources || []}
-        onAddResource={handleAddResource}
-        onDeleteResource={handleDeleteResource}
       />
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />

@@ -63,16 +63,6 @@ export function AddWeekModal({ isOpen, onClose, onSave }: AddWeekModalProps) {
     onClose();
   };
 
-  // Format display for date inputs (shows dd/mm/yy in placeholder)
-  const formatDatePlaceholder = (date: string) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const year = d.getFullYear().toString().slice(-2);
-    return `${day}/${month}/${year}`;
-  };
-
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
@@ -114,11 +104,6 @@ export function AddWeekModal({ isOpen, onClose, onSave }: AddWeekModalProps) {
               <div>
                 <Label htmlFor="weekStartDate" className="text-sm font-semibold text-[#2c1810] mb-2 block">
                   Start Date
-                  {startDate && (
-                    <span className="ml-2 text-xs text-purple-600 font-normal">
-                      ({formatDatePlaceholder(startDate)})
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="weekStartDate"
@@ -131,11 +116,6 @@ export function AddWeekModal({ isOpen, onClose, onSave }: AddWeekModalProps) {
               <div>
                 <Label htmlFor="weekEndDate" className="text-sm font-semibold text-[#2c1810] mb-2 block">
                   End Date
-                  {endDate && (
-                    <span className="ml-2 text-xs text-purple-600 font-normal">
-                      ({formatDatePlaceholder(endDate)})
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="weekEndDate"

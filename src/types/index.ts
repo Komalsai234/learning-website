@@ -1,12 +1,5 @@
 export type TaskStatus = 'todo' | 'completed' | 'holiday';
 
-export interface Resource {
-  id: string;
-  title: string;
-  url: string;
-  addedAt: string;
-}
-
 export interface Task {
   date: string;
   day: string;
@@ -18,14 +11,11 @@ export interface Task {
 }
 
 export interface Week {
-  id: string;
+  id: number;
   title: string;
-  startDate: string;
-  endDate: string;
   dates: string;
   description?: string;
   tasks: Task[];
-  resources: Resource[];
 }
 
 export interface Toast {

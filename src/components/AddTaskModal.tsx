@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Task } from '@/types';
-import { getDayOfWeek } from '@/utils/dateUtils';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -50,7 +49,9 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
       }
     }
 
-    const autoDay = getDayOfWeek(date);
+    const selectedDate = new Date(date);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const autoDay = dayNames[selectedDate.getDay()];
 
     const newTask: Task = {
       date,
@@ -64,16 +65,6 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
 
     onSave(newTask);
     onClose();
-  };
-
-  // Format display for date input (shows dd/mm/yy)
-  const formatDateDisplay = (dateStr: string) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const year = d.getFullYear().toString().slice(-2);
-    return `${day}/${month}/${year}`;
   };
 
   return (
@@ -103,11 +94,6 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
             <div>
               <Label htmlFor="taskDate" className="text-sm font-semibold text-[#2c1810] mb-2 block">
                 Date
-                {date && (
-                  <span className="ml-2 text-xs text-purple-600 font-normal">
-                    ({formatDateDisplay(date)})
-                  </span>
-                )}
               </Label>
               <Input
                 id="taskDate"

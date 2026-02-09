@@ -1,6 +1,5 @@
 import { Edit2, Video, Clock, CheckCircle2, Circle } from 'lucide-react';
 import type { Task } from '@/types';
-import { formatDateDisplay, isWeekend } from '@/utils/dateUtils';
 
 interface TaskCardProps {
   task: Task;
@@ -11,11 +10,18 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }: TaskCardProps) {
-  const isWeekendDay = isWeekend(task.date);
+  const isWeekend = task.day === 'Saturday' || task.day === 'Sunday';
   const isHoliday = task.isHoliday || false;
 
   // Format date to "Feb 12"
-  const displayDate = formatDateDisplay(task.date);
+  let displayDate = task.date;
+  if (task.date && task.date.includes('-')) {
+    const dateObj = new Date(task.date);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[dateObj.getMonth()];
+    const day = dateObj.getDate();
+    displayDate = `${month} ${day}`;
+  }
 
   // Format study time
   const studyMinutes = parseInt(task.studyTime) || 0;
@@ -85,19 +91,9 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
     );
   }
 
-  // Weekend highlight styling
-  const weekendBorderClass = isWeekendDay ? 'border-2 border-rose-300 bg-gradient-to-br from-rose-50/80 to-purple-50/80' : 'border border-[#d9cfc1] bg-[#faf7f2]';
-  const weekendBadgeClass = isWeekendDay ? 'from-rose-600 to-purple-700' : 'from-[#ab6e47] to-[#8b5a3c]';
-
   return (
-    <div className={`rounded-2xl p-6 shadow-md animate-fadeInUp relative overflow-hidden group transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${weekendBorderClass} ${task.status === 'completed' ? 'opacity-80' : ''}`}>
-      {isWeekendDay && (
-        <div className="absolute top-2 right-2 px-2 py-1 bg-gradient-to-r from-rose-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-md">
-          Weekend
-        </div>
-      )}
-      
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isWeekendDay ? 'from-rose-500 to-purple-600' : 'from-[#ab6e47] to-[#c28659]'} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
+    <div className={`bg-[#faf7f2] rounded-2xl p-6 border border-[#d9cfc1] shadow-md animate-fadeInUp relative overflow-hidden group transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${task.status === 'completed' ? 'opacity-80' : ''} ${isWeekend ? 'bg-gradient-to-br from-rose-50/50 to-purple-50/50 border-rose-200' : ''}`}>
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#ab6e47] to-[#c28659] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
       
       <div className="flex justify-between items-start mb-4 pb-4 border-b border-[#e5dccf]">
         <div className="flex-1">
@@ -105,7 +101,7 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
             {displayDate}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`text-sm uppercase tracking-wider font-semibold ${isWeekendDay ? 'text-rose-700' : 'text-[#8c7a6a]'}`}>
+            <span className="text-sm text-[#8c7a6a] uppercase tracking-wider font-semibold">
               {task.day}
             </span>
             {task.hasMeet && (
@@ -117,7 +113,7 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className={`px-3 py-1.5 rounded-full text-sm font-bold text-white bg-gradient-to-r ${weekendBadgeClass} shadow-md flex items-center gap-1.5`}>
+          <div className={`px-3 py-1.5 rounded-full text-sm font-bold text-white bg-gradient-to-r ${isWeekend ? 'from-amber-600 to-amber-700' : 'from-[#ab6e47] to-[#8b5a3c]'} shadow-md flex items-center gap-1.5`}>
             <Clock className="w-3.5 h-3.5" />
             {displayTime}
           </div>

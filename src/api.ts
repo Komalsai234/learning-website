@@ -55,26 +55,24 @@ const hasOverlappingWeek = (weeks: Week[], newStartDate: string, newEndDate: str
   return weeks.some(week => {
     if (excludeId && week.id === excludeId) return false;
     
-    const dateMatch = week.dates.match(/(\d{2})\/(\d{2})\/(\d{2})/g);
-    if (!dateMatch || dateMatch.length < 2) return false;
+    const dateMatch = week.dates.match(/(\w{3})\s(\d{1,2})\s-\s(\w{3})\s(\d{1,2})/);
+    if (!dateMatch) return false;
     
-    const [startDay, startMonth, startYear] = dateMatch[0].split('/').map(Number);
-    const [endDay, endMonth, endYear] = dateMatch[1].split('/').map(Number);
-    
-    const existingStart = new Date(2000 + startYear, startMonth - 1, startDay).getTime();
-    const existingEnd = new Date(2000 + endYear, endMonth - 1, endDay).getTime();
+    // This is simplified - for production, you'd want more robust date parsing
+    const existingStart = new Date(week.dates.split(' - ')[0]).getTime();
+    const existingEnd = new Date(week.dates.split(' - ')[1]).getTime();
     
     return (newStart <= existingEnd && newEnd >= existingStart);
   });
 };
 
-// Format dates as dd/mm/yy
+// Format dates as "Feb 12"
 const formatDate = (date: string): string => {
   const d = new Date(date);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const year = d.getFullYear().toString().slice(-2);
-  return `${day}/${month}/${year}`;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const day = d.getDate();
+  return `${month} ${day}`;
 };
 
 export const api = {
