@@ -1,21 +1,31 @@
-export type TaskStatus = 'todo' | 'completed' | 'postponed' | 'holiday';
+export type TaskStatus = 'todo' | 'completed' | 'holiday';
+
+export interface Resource {
+  id: string;
+  title: string;
+  url: string;
+  addedAt: string;
+}
 
 export interface Task {
   date: string;
   day: string;
   studyTime: string;
   task: string;
-  isHoliday: boolean;
-  hasMeet: boolean;
+  isHoliday?: boolean;
+  hasMeet?: boolean;
   status: TaskStatus;
 }
 
 export interface Week {
-  id: number;
+  id: string;
   title: string;
+  startDate: string;
+  endDate: string;
   dates: string;
-  description: string;
+  description?: string;
   tasks: Task[];
+  resources: Resource[];
 }
 
 export interface Toast {

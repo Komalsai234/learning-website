@@ -1,4 +1,4 @@
-import { X, Circle, CheckCircle2, PauseCircle } from 'lucide-react';
+import { X, Circle, CheckCircle2 } from 'lucide-react';
 import type { TaskStatus } from '@/types';
 
 interface StatusChangeModalProps {
@@ -33,16 +33,6 @@ export function StatusChangeModal({ isOpen, onClose, onChangeStatus }: StatusCha
       borderColor: 'border-emerald-400',
       bgColor: 'bg-[#faf7f2]',
       hoverGradient: 'hover:bg-gradient-to-r hover:from-emerald-500 hover:to-emerald-600',
-      textColor: 'text-[#5c4a3a]',
-      hoverTextColor: 'hover:text-white'
-    },
-    {
-      status: 'postponed' as TaskStatus,
-      label: 'Postponed',
-      icon: PauseCircle,
-      borderColor: 'border-amber-400',
-      bgColor: 'bg-[#faf7f2]',
-      hoverGradient: 'hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-600',
       textColor: 'text-[#5c4a3a]',
       hoverTextColor: 'hover:text-white'
     }
