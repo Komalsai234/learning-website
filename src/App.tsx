@@ -32,7 +32,9 @@ function App() {
     
     // Set up real-time listener
     const unsubscribe = initDataListener((data) => {
-      setWeeks(data);
+      // Sort weeks in descending order (latest first)
+      const sortedWeeks = [...data].sort((a, b) => b.id - a.id);
+      setWeeks(sortedWeeks);
       setIsLoading(false);
     });
 
