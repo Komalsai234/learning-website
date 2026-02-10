@@ -1,4 +1,5 @@
-import { Edit2, Video, Clock, CheckCircle2, Circle } from 'lucide-react';
+// TaskCard.tsx
+import { Edit2, Video, Clock, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
 import type { Task } from '@/types';
 
 interface TaskCardProps {
@@ -60,6 +61,13 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
   const config = statusConfig[status as keyof typeof statusConfig];
   const StatusIcon = config.icon;
 
+  const handleResourceClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.resource) {
+      window.open(task.resource, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   if (isHoliday) {
     return (
       <div className="bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-2xl p-6 border-2 border-dashed border-amber-400 shadow-md animate-fadeInUp relative overflow-hidden group">
@@ -100,7 +108,7 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
           <div className="text-2xl font-extrabold bg-gradient-to-r from-[#ab6e47] to-[#9b6b4f] bg-clip-text text-transparent">
             {displayDate}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-sm text-[#8c7a6a] uppercase tracking-wider font-semibold">
               {task.day}
             </span>
@@ -109,6 +117,15 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
                 <Video className="w-3 h-3" />
                 Meet
               </span>
+            )}
+            {task.resource && (
+              <button
+                onClick={handleResourceClick}
+                className="inline-flex items-center justify-center p-1.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full shadow-md transition-all duration-200 hover:scale-105"
+                title="Open learning resource"
+              >
+                <ExternalLink className="w-3 h-3" />
+              </button>
             )}
           </div>
         </div>

@@ -1,3 +1,4 @@
+// types/index.ts
 export type TaskStatus = 'todo' | 'completed' | 'holiday';
 
 export interface Task {
@@ -7,6 +8,7 @@ export interface Task {
   task: string;
   isHoliday?: boolean;
   hasMeet?: boolean;
+  resource?: string; // URL to learning resource
   status: TaskStatus;
 }
 

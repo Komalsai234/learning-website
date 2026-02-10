@@ -1,3 +1,4 @@
+// EditTaskModal.tsx
 import { useState, useEffect } from 'react';
 import { X, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
   const [date, setDate] = useState('');
   const [studyTime, setStudyTime] = useState('');
   const [description, setDescription] = useState('');
+  const [resource, setResource] = useState('');
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
 
@@ -27,6 +29,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       setDate(task.date);
       setStudyTime(task.studyTime || '');
       setDescription(task.task || '');
+      setResource(task.resource || '');
       setIsHoliday(task.isHoliday || false);
       setHasMeet(task.hasMeet || false);
     }
@@ -51,6 +54,16 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       }
     }
 
+    // Validate resource URL if provided
+    if (resource && resource.trim()) {
+      try {
+        new URL(resource.trim());
+      } catch {
+        alert('Please enter a valid URL for the resource (e.g., https://example.com)');
+        return;
+      }
+    }
+
     const selectedDate = new Date(date);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
@@ -63,6 +76,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       task: description,
       isHoliday,
       hasMeet,
+      resource: resource.trim() || undefined,
       status: isHoliday ? 'holiday' : task.status
     };
 
@@ -99,7 +113,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto">
             <div>
               <Label htmlFor="editTaskDate" className="text-sm font-semibold text-[#2c1810] mb-2 block">
                 Date
@@ -150,6 +164,23 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
                     rows={4}
                     className="w-full px-4 py-3 border-2 border-[#d9cfc1] rounded-xl focus:border-[#ab6e47] focus:ring-[#ab6e47]/20 bg-white resize-none"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="editTaskResource" className="text-sm font-semibold text-[#2c1810] mb-2 block">
+                    Resource Link (Optional)
+                  </Label>
+                  <Input
+                    id="editTaskResource"
+                    type="url"
+                    value={resource}
+                    onChange={(e) => setResource(e.target.value)}
+                    placeholder="https://example.com/learning-resource"
+                    className="w-full px-4 py-3 border-2 border-[#d9cfc1] rounded-xl focus:border-[#ab6e47] focus:ring-[#ab6e47]/20 bg-white"
+                  />
+                  <p className="text-xs text-[#8c7a6a] mt-1.5">
+                    Add a link to documentation, tutorial, video, or any learning material
+                  </p>
                 </div>
               </>
             )}
