@@ -1,3 +1,4 @@
+// src/api.ts
 import type { Week, Task, TaskStatus } from '@/types';
 import { getSharedDataRef } from '@/firebase';
 import { setDoc, onSnapshot } from 'firebase/firestore';
@@ -5,6 +6,30 @@ import { setDoc, onSnapshot } from 'firebase/firestore';
 // In-memory cache
 let memoryCache: Week[] = [];
 let unsubscribe: (() => void) | null = null;
+
+// Helper function to remove undefined values from objects (Firebase doesn't support undefined)
+const removeUndefined = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefined(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      if (value !== undefined) {
+        cleaned[key] = removeUndefined(value);
+      }
+    });
+    return cleaned;
+  }
+  
+  return obj;
+};
 
 // Initialize real-time listener
 export const initDataListener = (callback: (weeks: Week[]) => void) => {
@@ -41,7 +66,9 @@ const saveData = async (weeks: Week[]) => {
   memoryCache = weeks;
   try {
     const sharedRef = getSharedDataRef();
-    await setDoc(sharedRef, { weeks, lastUpdated: Date.now() });
+    // Remove undefined values before saving
+    const cleanedWeeks = removeUndefined(weeks);
+    await setDoc(sharedRef, { weeks: cleanedWeeks, lastUpdated: Date.now() });
   } catch (e) {
     console.error('Error saving to Firebase:', e);
   }
@@ -124,10 +151,17 @@ export const api = {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
 
+    // Create task object without undefined values
     const newTask: Task = {
-      ...taskData,
+      date: taskData.date,
       day: autoDay,
-      status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo')
+      studyTime: taskData.studyTime,
+      task: taskData.task,
+      status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo'),
+      isHoliday: taskData.isHoliday || false,
+      hasMeet: taskData.hasMeet || false,
+      // Only include resource if it exists and is not empty
+      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {})
     };
 
     const updatedWeeks = [...weeks];
@@ -154,11 +188,21 @@ export const api = {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
 
-    const updatedWeeks = [...weeks];
-    updatedWeeks[weekIndex].tasks[taskIndex] = {
-      ...taskData,
-      day: autoDay
+    // Create task object without undefined values
+    const updatedTask: Task = {
+      date: taskData.date,
+      day: autoDay,
+      studyTime: taskData.studyTime,
+      task: taskData.task,
+      status: taskData.status,
+      isHoliday: taskData.isHoliday || false,
+      hasMeet: taskData.hasMeet || false,
+      // Only include resource if it exists and is not empty
+      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {})
     };
+
+    const updatedWeeks = [...weeks];
+    updatedWeeks[weekIndex].tasks[taskIndex] = updatedTask;
     
     await saveData(updatedWeeks);
     return updatedWeeks[weekIndex].tasks[taskIndex];
