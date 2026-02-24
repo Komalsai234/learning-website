@@ -8,7 +8,8 @@ export interface Task {
   task: string;
   isHoliday?: boolean;
   hasMeet?: boolean;
-  resource?: string; // URL to learning resource
+  resource?: string; 
+  meetLink?: string;
   status: TaskStatus;
 }
 

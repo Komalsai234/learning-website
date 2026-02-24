@@ -85,7 +85,6 @@ const hasOverlappingWeek = (weeks: Week[], newStartDate: string, newEndDate: str
     const dateMatch = week.dates.match(/(\w{3})\s(\d{1,2})\s-\s(\w{3})\s(\d{1,2})/);
     if (!dateMatch) return false;
     
-    // This is simplified - for production, you'd want more robust date parsing
     const existingStart = new Date(week.dates.split(' - ')[0]).getTime();
     const existingEnd = new Date(week.dates.split(' - ')[1]).getTime();
     
@@ -112,7 +111,6 @@ export const api = {
   async createWeek(weekData: { title: string; startDate: string; endDate: string; description?: string }): Promise<Week> {
     const weeks = getData();
     
-    // Check for overlapping weeks
     if (hasOverlappingWeek(weeks, weekData.startDate, weekData.endDate)) {
       throw new Error('A week already exists for these dates');
     }
@@ -151,7 +149,6 @@ export const api = {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
 
-    // Create task object without undefined values
     const newTask: Task = {
       date: taskData.date,
       day: autoDay,
@@ -160,8 +157,8 @@ export const api = {
       status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo'),
       isHoliday: taskData.isHoliday || false,
       hasMeet: taskData.hasMeet || false,
-      // Only include resource if it exists and is not empty
-      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {})
+      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {}),
+      ...(taskData.meetLink && taskData.meetLink.trim() !== '' ? { meetLink: taskData.meetLink.trim() } : {}),
     };
 
     const updatedWeeks = [...weeks];
@@ -188,7 +185,6 @@ export const api = {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
 
-    // Create task object without undefined values
     const updatedTask: Task = {
       date: taskData.date,
       day: autoDay,
@@ -197,8 +193,8 @@ export const api = {
       status: taskData.status,
       isHoliday: taskData.isHoliday || false,
       hasMeet: taskData.hasMeet || false,
-      // Only include resource if it exists and is not empty
-      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {})
+      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {}),
+      ...(taskData.meetLink && taskData.meetLink.trim() !== '' ? { meetLink: taskData.meetLink.trim() } : {}),
     };
 
     const updatedWeeks = [...weeks];

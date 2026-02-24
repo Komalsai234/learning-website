@@ -23,6 +23,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
   const [resource, setResource] = useState('');
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
+  const [meetLink, setMeetLink] = useState('');
 
   useEffect(() => {
     if (task && isOpen) {
@@ -32,6 +33,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       setResource(task.resource || '');
       setIsHoliday(task.isHoliday || false);
       setHasMeet(task.hasMeet || false);
+      setMeetLink(task.meetLink || '');
     }
   }, [task, isOpen]);
 
@@ -64,6 +66,16 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       }
     }
 
+    // Validate meet link URL if provided
+    if (meetLink && meetLink.trim()) {
+      try {
+        new URL(meetLink.trim());
+      } catch {
+        alert('Please enter a valid URL for the Google Meet link (e.g., https://meet.google.com/xxx-xxxx-xxx)');
+        return;
+      }
+    }
+
     const selectedDate = new Date(date);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const autoDay = dayNames[selectedDate.getDay()];
@@ -77,6 +89,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
       isHoliday,
       hasMeet,
       resource: resource.trim() || undefined,
+      meetLink: hasMeet && meetLink.trim() ? meetLink.trim() : undefined,
       status: isHoliday ? 'holiday' : task.status
     };
 
@@ -199,17 +212,38 @@ export function EditTaskModal({ isOpen, onClose, onSave, onDelete, task }: EditT
               </div>
 
               {!isHoliday && (
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="editTaskHasMeet"
-                    checked={hasMeet}
-                    onCheckedChange={(checked) => setHasMeet(checked as boolean)}
-                    className="w-5 h-5 border-2 border-[#d9cfc1] data-[state=checked]:bg-[#ab6e47] data-[state=checked]:border-[#ab6e47]"
-                  />
-                  <Label htmlFor="editTaskHasMeet" className="text-sm font-medium text-[#2c1810] cursor-pointer">
-                    Has Google Meet
-                  </Label>
-                </div>
+                <>
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="editTaskHasMeet"
+                      checked={hasMeet}
+                      onCheckedChange={(checked) => setHasMeet(checked as boolean)}
+                      className="w-5 h-5 border-2 border-[#d9cfc1] data-[state=checked]:bg-[#ab6e47] data-[state=checked]:border-[#ab6e47]"
+                    />
+                    <Label htmlFor="editTaskHasMeet" className="text-sm font-medium text-[#2c1810] cursor-pointer">
+                      Has Google Meet
+                    </Label>
+                  </div>
+
+                  {hasMeet && (
+                    <div className="ml-8 animate-[fadeIn_0.2s_ease]">
+                      <Label htmlFor="editTaskMeetLink" className="text-sm font-semibold text-[#2c1810] mb-2 block">
+                        Google Meet Link (Optional)
+                      </Label>
+                      <Input
+                        id="editTaskMeetLink"
+                        type="url"
+                        value={meetLink}
+                        onChange={(e) => setMeetLink(e.target.value)}
+                        placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                        className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:border-blue-400 focus:ring-blue-400/20 bg-white"
+                      />
+                      <p className="text-xs text-[#8c7a6a] mt-1.5">
+                        Paste your Google Meet link so you can join directly from the task card
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

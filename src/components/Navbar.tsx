@@ -27,11 +27,6 @@ export function Navbar({ onAddWeek }: NavbarProps) {
               <Plus className="w-4 h-4" />
               New Week
             </Button>
-            
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#e5dccf] rounded-full border border-[#d9cfc1]">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse-dot" />
-              <span className="text-sm font-semibold text-[#5c4a3a]">Live</span>
-            </div>
           </div>
         </div>
       </div>

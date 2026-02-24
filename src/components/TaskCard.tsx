@@ -68,6 +68,13 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
     }
   };
 
+  const handleMeetClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.meetLink) {
+      window.open(task.meetLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   if (isHoliday) {
     return (
       <div className="bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-2xl p-6 border-2 border-dashed border-amber-400 shadow-md animate-fadeInUp relative overflow-hidden group">
@@ -113,10 +120,21 @@ export function TaskCard({ task, weekIndex, taskIndex, onEdit, onChangeStatus }:
               {task.day}
             </span>
             {task.hasMeet && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold rounded-full shadow-md">
-                <Video className="w-3 h-3" />
-                Meet
-              </span>
+              task.meetLink ? (
+                <button
+                  onClick={handleMeetClick}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-bold rounded-full shadow-md transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                  title="Join Google Meet"
+                >
+                  <Video className="w-3 h-3" />
+                  Meet
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold rounded-full shadow-md">
+                  <Video className="w-3 h-3" />
+                  Meet
+                </span>
+              )
             )}
             {task.resource && (
               <button
