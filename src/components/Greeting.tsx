@@ -1,9 +1,16 @@
 export function Greeting() {
+  const h = new Date().getHours();
+  const text =
+    h < 12
+      ? 'Good Morning, Aardra Akka'
+      : h < 17
+      ? 'Good Afternoon, Aardra Akka'
+      : 'Good Evening, Aardra Akka';
+
   return (
-    <div className="flex items-center justify-center gap-4 mb-8 animate-fadeInUp">
-      <span className="text-4xl animate-wave">👋</span>
-      <h2 className="text-3xl font-extrabold bg-gradient-to-r from-[#ab6e47] to-[#9b6b4f] bg-clip-text text-transparent">
-        Hi Aardra Akka, Let's Study
+    <div className="flex flex-col items-center justify-center mb-10 animate-fadeInUp">
+      <h2 className="font-['Playfair_Display'] text-[2rem] font-extrabold mt-[10px] bg-gradient-to-r from-[#ab6e47] to-[#c28659] bg-clip-text text-transparent">
+        {text}
       </h2>
     </div>
   );
