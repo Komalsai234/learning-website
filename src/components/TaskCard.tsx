@@ -1,5 +1,4 @@
 import { Edit2, Video, Clock, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
-import React from 'react';
 import type { Task } from '@/types';
 
 interface TaskCardProps {

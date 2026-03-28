@@ -80,8 +80,6 @@ export function MessagesPage({ messages, onSaveMessages }: MessagesPageProps) {
         <div className="space-y-3 pb-24">
           {sorted.map(msg => {
             const replies = msg.replies || [];
-            // Only show replies in the thread, not the original message again
-            const lastMsg = replies.length > 0 ? replies[replies.length - 1] : { text: msg.text, from: 'komal' as const, ts: msg.id };
             const preview = msg.text.length > 80 ? msg.text.slice(0, 80) + '…' : msg.text;
             const isOpen = openThreads.has(msg.id);
 
