@@ -1,244 +1,191 @@
 // src/api.ts
-import type { Week, Task, TaskStatus } from '@/types';
+import type { Week, Task, TaskStatus, Message } from '@/types';
 import { getSharedDataRef } from '@/firebase';
 import { setDoc, onSnapshot } from 'firebase/firestore';
 
 // In-memory cache
 let memoryCache: Week[] = [];
+let messageCache: Message[] = [];
 let unsubscribe: (() => void) | null = null;
 
-// Helper function to remove undefined values from objects (Firebase doesn't support undefined)
 const removeUndefined = (obj: any): any => {
-  if (obj === null || obj === undefined) {
-    return null;
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(item => removeUndefined(item));
-  }
-  
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) return obj.map(item => removeUndefined(item));
   if (typeof obj === 'object') {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
       const value = obj[key];
-      if (value !== undefined) {
-        cleaned[key] = removeUndefined(value);
-      }
+      if (value !== undefined) cleaned[key] = removeUndefined(value);
     });
     return cleaned;
   }
-  
   return obj;
 };
 
-// Initialize real-time listener
-export const initDataListener = (callback: (weeks: Week[]) => void) => {
-  // Unsubscribe from previous listener if exists
-  if (unsubscribe) {
-    unsubscribe();
-  }
-  
+// Initialize real-time listener — now also returns messages
+export const initDataListener = (callback: (weeks: Week[], messages: Message[]) => void) => {
+  if (unsubscribe) unsubscribe();
+
   const sharedRef = getSharedDataRef();
-  
+
   unsubscribe = onSnapshot(sharedRef, (doc) => {
     if (doc.exists()) {
       const data = doc.data();
       memoryCache = data.weeks || [];
-      callback(memoryCache);
+      messageCache = data.messages || [];
+      callback(memoryCache, messageCache);
     } else {
-      // Initialize with empty data
       memoryCache = [];
-      callback(memoryCache);
+      messageCache = [];
+      callback(memoryCache, messageCache);
     }
   }, (error) => {
     console.error('Firebase listener error:', error);
-    callback(memoryCache);
+    callback(memoryCache, messageCache);
   });
-  
+
   return unsubscribe;
 };
 
-// Get data from memory cache
 const getData = (): Week[] => memoryCache;
+const getMessages = (): Message[] => messageCache;
 
-// Save data to Firebase
-const saveData = async (weeks: Week[]) => {
+const saveData = async (weeks: Week[], messages?: Message[]) => {
   memoryCache = weeks;
+  if (messages !== undefined) messageCache = messages;
   try {
     const sharedRef = getSharedDataRef();
-    // Remove undefined values before saving
-    const cleanedWeeks = removeUndefined(weeks);
-    await setDoc(sharedRef, { weeks: cleanedWeeks, lastUpdated: Date.now() });
+    await setDoc(sharedRef, {
+      weeks: removeUndefined(weeks),
+      messages: removeUndefined(messages !== undefined ? messages : messageCache),
+      lastUpdated: Date.now(),
+    });
   } catch (e) {
     console.error('Error saving to Firebase:', e);
   }
 };
 
-// Check for overlapping dates
 const hasOverlappingWeek = (weeks: Week[], newStartDate: string, newEndDate: string, excludeId?: number): boolean => {
   const newStart = new Date(newStartDate).getTime();
   const newEnd = new Date(newEndDate).getTime();
-
   return weeks.some(week => {
     if (excludeId && week.id === excludeId) return false;
-    
     const dateMatch = week.dates.match(/(\w{3})\s(\d{1,2})\s-\s(\w{3})\s(\d{1,2})/);
     if (!dateMatch) return false;
-    
     const existingStart = new Date(week.dates.split(' - ')[0]).getTime();
     const existingEnd = new Date(week.dates.split(' - ')[1]).getTime();
-    
     return (newStart <= existingEnd && newEnd >= existingStart);
   });
 };
 
-// Format dates as "Feb 12"
 const formatDate = (date: string): string => {
   const d = new Date(date);
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[d.getMonth()];
-  const day = d.getDate();
-  return `${month} ${day}`;
+  return `${months[d.getMonth()]} ${d.getDate()}`;
 };
 
 export const api = {
-  // Get all weeks - returns current cache
   async getWeeks(): Promise<Week[]> {
     return getData();
   },
 
-  // Create new week
   async createWeek(weekData: { title: string; startDate: string; endDate: string; description?: string }): Promise<Week> {
     const weeks = getData();
-    
     if (hasOverlappingWeek(weeks, weekData.startDate, weekData.endDate)) {
       throw new Error('A week already exists for these dates');
     }
-
     const newWeek: Week = {
       id: Date.now(),
       title: weekData.title,
       dates: `${formatDate(weekData.startDate)} - ${formatDate(weekData.endDate)}`,
       description: weekData.description || '',
-      tasks: []
+      tasks: [],
     };
-
-    const updatedWeeks = [...weeks, newWeek];
-    await saveData(updatedWeeks);
-    
+    await saveData([...weeks, newWeek]);
     return newWeek;
   },
 
-  // Delete week
   async deleteWeek(weekId: number): Promise<void> {
     const weeks = getData();
-    const filtered = weeks.filter(w => w.id !== weekId);
-    await saveData(filtered);
+    await saveData(weeks.filter(w => w.id !== weekId));
   },
 
-  // Add task to week
   async addTask(weekId: number, taskData: Omit<Task, 'day'>): Promise<Task> {
     const weeks = getData();
     const weekIndex = weeks.findIndex(w => w.id === weekId);
-    
-    if (weekIndex === -1) {
-      throw new Error('Week not found');
-    }
+    if (weekIndex === -1) throw new Error('Week not found');
 
-    const selectedDate = new Date(taskData.date);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const autoDay = dayNames[selectedDate.getDay()];
-
     const newTask: Task = {
       date: taskData.date,
-      day: autoDay,
+      day: dayNames[new Date(taskData.date).getDay()],
       studyTime: taskData.studyTime,
       task: taskData.task,
       status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo'),
       isHoliday: taskData.isHoliday || false,
       hasMeet: taskData.hasMeet || false,
-      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {}),
-      ...(taskData.meetLink && taskData.meetLink.trim() !== '' ? { meetLink: taskData.meetLink.trim() } : {}),
+      ...(taskData.resource?.trim() ? { resource: taskData.resource.trim() } : {}),
+      ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
     };
 
     const updatedWeeks = [...weeks];
     updatedWeeks[weekIndex].tasks.push(newTask);
     await saveData(updatedWeeks);
-    
     return newTask;
   },
 
-  // Update task
   async updateTask(weekId: number, taskIndex: number, taskData: Task): Promise<Task> {
     const weeks = getData();
     const weekIndex = weeks.findIndex(w => w.id === weekId);
-    
-    if (weekIndex === -1) {
-      throw new Error('Week not found');
-    }
-    
-    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) {
-      throw new Error('Task not found');
-    }
+    if (weekIndex === -1) throw new Error('Week not found');
+    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) throw new Error('Task not found');
 
-    const selectedDate = new Date(taskData.date);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const autoDay = dayNames[selectedDate.getDay()];
-
     const updatedTask: Task = {
       date: taskData.date,
-      day: autoDay,
+      day: dayNames[new Date(taskData.date).getDay()],
       studyTime: taskData.studyTime,
       task: taskData.task,
       status: taskData.status,
       isHoliday: taskData.isHoliday || false,
       hasMeet: taskData.hasMeet || false,
-      ...(taskData.resource && taskData.resource.trim() !== '' ? { resource: taskData.resource.trim() } : {}),
-      ...(taskData.meetLink && taskData.meetLink.trim() !== '' ? { meetLink: taskData.meetLink.trim() } : {}),
+      ...(taskData.resource?.trim() ? { resource: taskData.resource.trim() } : {}),
+      ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
     };
 
     const updatedWeeks = [...weeks];
     updatedWeeks[weekIndex].tasks[taskIndex] = updatedTask;
-    
     await saveData(updatedWeeks);
-    return updatedWeeks[weekIndex].tasks[taskIndex];
+    return updatedTask;
   },
 
-  // Delete task
   async deleteTask(weekId: number, taskIndex: number): Promise<void> {
     const weeks = getData();
     const weekIndex = weeks.findIndex(w => w.id === weekId);
-    
-    if (weekIndex === -1) {
-      throw new Error('Week not found');
-    }
-    
-    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) {
-      throw new Error('Task not found');
-    }
-    
+    if (weekIndex === -1) throw new Error('Week not found');
+    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) throw new Error('Task not found');
     const updatedWeeks = [...weeks];
     updatedWeeks[weekIndex].tasks.splice(taskIndex, 1);
     await saveData(updatedWeeks);
   },
 
-  // Update task status
   async updateTaskStatus(weekId: number, taskIndex: number, status: TaskStatus): Promise<Task> {
     const weeks = getData();
     const weekIndex = weeks.findIndex(w => w.id === weekId);
-    
-    if (weekIndex === -1) {
-      throw new Error('Week not found');
-    }
-    
-    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) {
-      throw new Error('Task not found');
-    }
-    
+    if (weekIndex === -1) throw new Error('Week not found');
+    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) throw new Error('Task not found');
     const updatedWeeks = [...weeks];
     updatedWeeks[weekIndex].tasks[taskIndex].status = status;
     await saveData(updatedWeeks);
-    
     return updatedWeeks[weekIndex].tasks[taskIndex];
-  }
+  },
+
+  // ── Messages ──────────────────────────────────────────────────
+  async getMessages(): Promise<Message[]> {
+    return getMessages();
+  },
+
+  async saveMessages(messages: Message[]): Promise<void> {
+    await saveData(getData(), messages);
+  },
 };

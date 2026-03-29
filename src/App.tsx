@@ -33,23 +33,16 @@ function App() {
   const [viewingWeekIndex, setViewingWeekIndex] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  // Firebase real-time listener — now receives both weeks and messages
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = initDataListener((data) => {
-      const sortedWeeks = [...data].sort((a, b) => b.id - a.id);
+    const unsubscribe = initDataListener((weeksData, messagesData) => {
+      const sortedWeeks = [...weeksData].sort((a, b) => b.id - a.id);
       setWeeks(sortedWeeks);
+      setMessages(messagesData);
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('al_messages') || '[]');
-      setMessages(Array.isArray(saved) ? saved : []);
-    } catch {
-      setMessages([]);
-    }
   }, []);
 
   useEffect(() => {
@@ -70,9 +63,10 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const saveMessages = (updated: Message[]) => {
+  // Save messages to Firebase
+  const saveMessages = async (updated: Message[]) => {
     setMessages(updated);
-    localStorage.setItem('al_messages', JSON.stringify(updated));
+    await api.saveMessages(updated);
   };
 
   const showToast = (message: string, icon: string = '✓') => {
@@ -88,10 +82,7 @@ function App() {
   };
 
   const handleAddWeek = async (weekData: {
-    title: string;
-    startDate: string;
-    endDate: string;
-    description: string;
+    title: string; startDate: string; endDate: string; description: string;
   }) => {
     try {
       await api.createWeek(weekData);
@@ -126,9 +117,7 @@ function App() {
 
   const handleCloseTasksView = () => {
     setViewingWeekIndex(null);
-    if (window.history.state?.viewingWeek !== undefined) {
-      window.history.back();
-    }
+    if (window.history.state?.viewingWeek !== undefined) window.history.back();
   };
 
   const handleAddTask = async (task: Task) => {
@@ -187,52 +176,21 @@ function App() {
     }
   };
 
-  const openAddTaskModal = (weekIndex: number) => {
-    setCurrentWeekIndex(weekIndex);
-    setIsAddTaskModalOpen(true);
-  };
-
-  const openEditTaskModal = (weekIndex: number, taskIndex: number) => {
-    setCurrentWeekIndex(weekIndex);
-    setCurrentTaskIndex(taskIndex);
-    setIsEditTaskModalOpen(true);
-  };
-
-  const openStatusModal = (weekIndex: number, taskIndex: number) => {
-    setCurrentWeekIndex(weekIndex);
-    setCurrentTaskIndex(taskIndex);
-    setIsStatusModalOpen(true);
-  };
-
-  const closeAddTaskModal = () => {
-    setIsAddTaskModalOpen(false);
-    setCurrentWeekIndex(null);
-  };
-
-  const closeEditTaskModal = () => {
-    setIsEditTaskModalOpen(false);
-    setCurrentWeekIndex(null);
-    setCurrentTaskIndex(null);
-  };
-
-  const closeStatusModal = () => {
-    setIsStatusModalOpen(false);
-    setCurrentWeekIndex(null);
-    setCurrentTaskIndex(null);
-  };
+  const openAddTaskModal = (weekIndex: number) => { setCurrentWeekIndex(weekIndex); setIsAddTaskModalOpen(true); };
+  const openEditTaskModal = (weekIndex: number, taskIndex: number) => { setCurrentWeekIndex(weekIndex); setCurrentTaskIndex(taskIndex); setIsEditTaskModalOpen(true); };
+  const openStatusModal = (weekIndex: number, taskIndex: number) => { setCurrentWeekIndex(weekIndex); setCurrentTaskIndex(taskIndex); setIsStatusModalOpen(true); };
+  const closeAddTaskModal = () => { setIsAddTaskModalOpen(false); setCurrentWeekIndex(null); };
+  const closeEditTaskModal = () => { setIsEditTaskModalOpen(false); setCurrentWeekIndex(null); setCurrentTaskIndex(null); };
+  const closeStatusModal = () => { setIsStatusModalOpen(false); setCurrentWeekIndex(null); setCurrentTaskIndex(null); };
 
   const viewingWeek: Week | null =
     viewingWeekIndex !== null && viewingWeekIndex >= 0 && viewingWeekIndex < weeks.length
-      ? weeks[viewingWeekIndex]
-      : null;
+      ? weeks[viewingWeekIndex] : null;
   const isViewingTasks = viewingWeek !== null;
 
   const currentTask: Task | null =
-    currentWeekIndex !== null &&
-    currentTaskIndex !== null &&
-    weeks[currentWeekIndex]?.tasks?.[currentTaskIndex]
-      ? weeks[currentWeekIndex].tasks[currentTaskIndex]
-      : null;
+    currentWeekIndex !== null && currentTaskIndex !== null && weeks[currentWeekIndex]?.tasks?.[currentTaskIndex]
+      ? weeks[currentWeekIndex].tasks[currentTaskIndex] : null;
 
   const unreadCount = messages.filter(m => !m.read).length;
 
@@ -249,7 +207,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#f4ede4]">
-      {/* Animated background */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#f4ede4] to-[#ece4da]">
         <div className="absolute top-20 left-10 w-72 h-72 bg-[#ab6e47]/10 rounded-full blur-3xl animate-[float_20s_infinite_ease-in-out]" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#c28659]/10 rounded-full blur-3xl animate-[float_25s_infinite_ease-in-out_-5s]" />
@@ -260,14 +217,8 @@ function App() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         currentPage={currentPage}
-        onNavigate={(page: string) => {
-          setCurrentPage(page as Page);
-          setSidebarOpen(false);
-        }}
-        onNewWeek={() => {
-          setSidebarOpen(false);
-          setIsAddWeekModalOpen(true);
-        }}
+        onNavigate={(page: string) => { setCurrentPage(page as Page); setSidebarOpen(false); }}
+        onNewWeek={() => { setSidebarOpen(false); setIsAddWeekModalOpen(true); }}
         unreadCount={unreadCount}
       />
 
@@ -290,10 +241,7 @@ function App() {
         />
       ) : currentPage === 'messages' ? (
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-          <MessagesPage
-            messages={messages}
-            onSaveMessages={saveMessages}
-          />
+          <MessagesPage messages={messages} onSaveMessages={saveMessages} />
           <Footer />
         </main>
       ) : (
@@ -304,13 +252,7 @@ function App() {
           ) : (
             <div className="space-y-8">
               {weeks.map((week, index) => (
-                <WeekCard
-                  key={week.id}
-                  week={week}
-                  weekIndex={index}
-                  onViewTasks={handleViewTasks}
-                  onDeleteWeek={handleDeleteWeek}
-                />
+                <WeekCard key={week.id} week={week} weekIndex={index} onViewTasks={handleViewTasks} onDeleteWeek={handleDeleteWeek} />
               ))}
             </div>
           )}
@@ -318,32 +260,10 @@ function App() {
         </main>
       )}
 
-      <AddWeekModal
-        isOpen={isAddWeekModalOpen}
-        onClose={() => setIsAddWeekModalOpen(false)}
-        onSave={handleAddWeek}
-      />
-
-      <AddTaskModal
-        isOpen={isAddTaskModalOpen}
-        onClose={closeAddTaskModal}
-        onSave={handleAddTask}
-      />
-
-      <EditTaskModal
-        isOpen={isEditTaskModalOpen}
-        onClose={closeEditTaskModal}
-        onSave={handleEditTask}
-        onDelete={handleDeleteTask}
-        task={currentTask}
-      />
-
-      <StatusChangeModal
-        isOpen={isStatusModalOpen}
-        onClose={closeStatusModal}
-        onChangeStatus={handleChangeStatus}
-      />
-
+      <AddWeekModal isOpen={isAddWeekModalOpen} onClose={() => setIsAddWeekModalOpen(false)} onSave={handleAddWeek} />
+      <AddTaskModal isOpen={isAddTaskModalOpen} onClose={closeAddTaskModal} onSave={handleAddTask} />
+      <EditTaskModal isOpen={isEditTaskModalOpen} onClose={closeEditTaskModal} onSave={handleEditTask} onDelete={handleDeleteTask} task={currentTask} />
+      <StatusChangeModal isOpen={isStatusModalOpen} onClose={closeStatusModal} onChangeStatus={handleChangeStatus} />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
