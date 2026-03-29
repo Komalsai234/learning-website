@@ -133,7 +133,6 @@ export function MessagesPage({ messages, onSaveMessages }: MessagesPageProps) {
                         <div className="flex items-center gap-[10px] mb-2">
                           <div className="w-[30px] h-[30px] rounded-xl bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-[.8rem] flex-shrink-0">A</div>
                           <div>
-                            <div className="font-semibold text-[.82rem] text-[#2c1810]">Aardra Akka</div>
                             <div className="text-[.72rem] text-[#8c7a6a]">{formatTs(r.ts)}</div>
                           </div>
                         </div>
@@ -200,7 +199,7 @@ export function MessagesPage({ messages, onSaveMessages }: MessagesPageProps) {
             <div className="p-5">
               <textarea ref={composeRef}
                 className="w-full bg-[#ece4da] border border-[#d9cfc1] rounded-xl px-[14px] py-[11px] text-[#2c1810] text-[.9rem] resize-none leading-relaxed transition-colors duration-200 focus:outline-none focus:border-[#ab6e47]"
-                rows={4} placeholder="Write your message to Aardra Akka…"
+                rows={4} placeholder="Write message to Aardra Akka…"
                 value={composeText} onChange={e => setComposeText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) sendMessage(); }}
               />
