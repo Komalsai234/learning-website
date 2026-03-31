@@ -33,7 +33,7 @@ function App() {
   const [viewingWeekIndex, setViewingWeekIndex] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Firebase real-time listener — now receives both weeks and messages
+  // Firebase real-time listener
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = initDataListener((weeksData, messagesData) => {
@@ -51,6 +51,7 @@ function App() {
     }
   }, [weeks, viewingWeekIndex]);
 
+  // Handle browser back button — single tap only
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state?.viewingWeek !== undefined) {
@@ -63,7 +64,17 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Save messages to Firebase
+  const handleViewTasks = (weekIndex: number) => {
+    setViewingWeekIndex(weekIndex);
+    window.history.pushState({ viewingWeek: weekIndex }, '', `#week-${weekIndex}`);
+  };
+
+  const handleCloseTasksView = () => {
+    setViewingWeekIndex(null);
+    // Replace state instead of going back — avoids double-tap on mobile
+    window.history.replaceState(null, '', window.location.pathname);
+  };
+
   const saveMessages = async (updated: Message[]) => {
     setMessages(updated);
     await api.saveMessages(updated);
@@ -108,16 +119,6 @@ function App() {
     } catch {
       showToast('Failed to delete week', '❌');
     }
-  };
-
-  const handleViewTasks = (weekIndex: number) => {
-    setViewingWeekIndex(weekIndex);
-    window.history.pushState({ viewingWeek: weekIndex }, '', `#week-${weekIndex}`);
-  };
-
-  const handleCloseTasksView = () => {
-    setViewingWeekIndex(null);
-    if (window.history.state?.viewingWeek !== undefined) window.history.back();
   };
 
   const handleAddTask = async (task: Task) => {

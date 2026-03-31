@@ -111,53 +111,53 @@ export const api = {
   },
 
   async addTask(weekId: number, taskData: Omit<Task, 'day'>): Promise<Task> {
-    const weeks = getData();
-    const weekIndex = weeks.findIndex(w => w.id === weekId);
-    if (weekIndex === -1) throw new Error('Week not found');
+  const weeks = getData();
+  const weekIndex = weeks.findIndex(w => w.id === weekId);
+  if (weekIndex === -1) throw new Error('Week not found');
 
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const newTask: Task = {
-      date: taskData.date,
-      day: dayNames[new Date(taskData.date).getDay()],
-      studyTime: taskData.studyTime,
-      task: taskData.task,
-      status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo'),
-      isHoliday: taskData.isHoliday || false,
-      hasMeet: taskData.hasMeet || false,
-      ...(taskData.resource?.trim() ? { resource: taskData.resource.trim() } : {}),
-      ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
-    };
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const newTask: Task = {
+    date: taskData.date,
+    day: dayNames[new Date(taskData.date).getDay()],
+    studyTime: taskData.studyTime,
+    task: taskData.task,
+    status: taskData.isHoliday ? 'holiday' : (taskData.status || 'todo'),
+    isHoliday: taskData.isHoliday || false,
+    hasMeet: taskData.hasMeet || false,
+    resources: taskData.resources && taskData.resources.length > 0 ? taskData.resources : [],
+    ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
+  };
 
-    const updatedWeeks = [...weeks];
-    updatedWeeks[weekIndex].tasks.push(newTask);
-    await saveData(updatedWeeks);
-    return newTask;
-  },
+  const updatedWeeks = [...weeks];
+  updatedWeeks[weekIndex].tasks.push(newTask);
+  await saveData(updatedWeeks);
+  return newTask;
+},
 
-  async updateTask(weekId: number, taskIndex: number, taskData: Task): Promise<Task> {
-    const weeks = getData();
-    const weekIndex = weeks.findIndex(w => w.id === weekId);
-    if (weekIndex === -1) throw new Error('Week not found');
-    if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) throw new Error('Task not found');
+async updateTask(weekId: number, taskIndex: number, taskData: Task): Promise<Task> {
+  const weeks = getData();
+  const weekIndex = weeks.findIndex(w => w.id === weekId);
+  if (weekIndex === -1) throw new Error('Week not found');
+  if (taskIndex < 0 || taskIndex >= weeks[weekIndex].tasks.length) throw new Error('Task not found');
 
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const updatedTask: Task = {
-      date: taskData.date,
-      day: dayNames[new Date(taskData.date).getDay()],
-      studyTime: taskData.studyTime,
-      task: taskData.task,
-      status: taskData.status,
-      isHoliday: taskData.isHoliday || false,
-      hasMeet: taskData.hasMeet || false,
-      ...(taskData.resource?.trim() ? { resource: taskData.resource.trim() } : {}),
-      ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
-    };
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const updatedTask: Task = {
+    date: taskData.date,
+    day: dayNames[new Date(taskData.date).getDay()],
+    studyTime: taskData.studyTime,
+    task: taskData.task,
+    status: taskData.status,
+    isHoliday: taskData.isHoliday || false,
+    hasMeet: taskData.hasMeet || false,
+    resources: taskData.resources && taskData.resources.length > 0 ? taskData.resources : [],
+    ...(taskData.meetLink?.trim() ? { meetLink: taskData.meetLink.trim() } : {}),
+  };
 
-    const updatedWeeks = [...weeks];
-    updatedWeeks[weekIndex].tasks[taskIndex] = updatedTask;
-    await saveData(updatedWeeks);
-    return updatedTask;
-  },
+  const updatedWeeks = [...weeks];
+  updatedWeeks[weekIndex].tasks[taskIndex] = updatedTask;
+  await saveData(updatedWeeks);
+  return updatedTask;
+},
 
   async deleteTask(weekId: number, taskIndex: number): Promise<void> {
     const weeks = getData();

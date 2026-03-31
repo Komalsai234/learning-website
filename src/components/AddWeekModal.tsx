@@ -29,9 +29,9 @@ export function AddWeekModal({ isOpen, onClose, onSave }: AddWeekModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative min-h-screen flex items-center justify-center p-4">
+  <div className="fixed inset-0 z-[300]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+    <div className="relative min-h-screen flex items-center justify-center p-4 z-[301]">
         <div className="bg-[#faf7f2] rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-[slideInDown_0.4s_cubic-bezier(0.4,0,0.2,1)]">
           <div className="bg-gradient-to-r from-[#ab6e47] to-[#9b6b4f] px-6 py-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Create New Week</h2>
