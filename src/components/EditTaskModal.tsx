@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Trash2, Plus, Video, Edit3 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
+import { VoiceRecorder } from './VoiceRecorder';
 import type { Task, Resource } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -26,6 +27,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
   const [studyTime, setStudyTime] = useState('');
   const [description, setDescription] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
+  const [voiceNote, setVoiceNote] = useState<string | undefined>(undefined);
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
   const [meetLink, setMeetLink] = useState('');
@@ -39,6 +41,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
       setHasMeet(task.hasMeet || false);
       setMeetLink(task.meetLink || '');
       setResources(task.resources || (task.resource ? [{ url: task.resource, label: 'Resource' }] : []));
+      setVoiceNote(task.voiceNote);
     }
   }, [task, isOpen]);
 
@@ -81,6 +84,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
       meetLink: hasMeet && finalMeetLink ? finalMeetLink : undefined,
       resources: validResources.map(r => ({ url: r.url, label: r.label.trim() || 'Resource' })),
       status: isHoliday ? 'holiday' : task.status,
+      voiceNote: voiceNote || undefined,
     };
     onSave(updatedTask);
     onClose();
@@ -112,6 +116,11 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
               placeholder="Describe what you'll be learning…"
               minRows={isMobile ? 3 : 4}
             />
+          </div>
+
+          <div>
+            <label className={labelCls}>Voice Message <span className="text-[#9a8878] font-normal normal-case">(optional)</span></label>
+            <VoiceRecorder value={voiceNote} onChange={setVoiceNote} />
           </div>
 
           <div>

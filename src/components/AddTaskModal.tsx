@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Video, ClipboardList, Loader2 } from 'lucide-react';
 import type { Task, Resource } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RichTextEditor } from './RichTextEditor';
+import { VoiceRecorder } from './VoiceRecorder';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
   const [studyTime, setStudyTime] = useState('');
   const [description, setDescription] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
+  const [voiceNote, setVoiceNote] = useState<string | undefined>(undefined);
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
   const [meetLink, setMeetLink] = useState('');
@@ -33,7 +35,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
   useEffect(() => {
     if (isOpen) {
       setDate(''); setStudyTime(''); setDescription('');
-      setResources([]);
+      setResources([]); setVoiceNote(undefined);
       setIsHoliday(false); setHasMeet(false); setMeetLink(''); setSaving(false);
     }
   }, [isOpen]);
@@ -78,6 +80,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
       meetLink: hasMeet && finalMeetLink ? finalMeetLink : undefined,
       resources: validResources.map(r => ({ url: r.url, label: r.label.trim() || 'Resource' })),
       status: isHoliday ? 'holiday' : 'todo',
+      ...(voiceNote ? { voiceNote } : {}),
     };
     onSave(newTask);
     onClose();
@@ -108,6 +111,11 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
               placeholder="Describe what you'll be learning or working on…"
               minRows={isMobile ? 3 : 4}
             />
+          </div>
+
+          <div>
+            <label className={labelCls}>Voice Message <span className="text-[#9a8878] font-normal normal-case">(optional)</span></label>
+            <VoiceRecorder value={voiceNote} onChange={setVoiceNote} />
           </div>
 
           <div>

@@ -168,3 +168,24 @@
 .quiz-answer-preview li {
   margin: 0.1em 0;
 }
+
+/* Themed native audio player */
+.themed-audio {
+  width: 100%;
+  border-radius: 12px;
+  accent-color: #ab6e47;
+  outline: none;
+}
+.themed-audio::-webkit-media-controls-panel {
+  background: linear-gradient(135deg, #fdfaf6, #f5ede3);
+  border-radius: 12px;
+}
+.themed-audio::-webkit-media-controls-download-button {
+  display: none !important;
+}
+.themed-audio::-webkit-media-controls-timeline {
+  accent-color: #ab6e47;
+}
+.themed-audio::-webkit-media-controls-volume-slider {
+  accent-color: #ab6e47;
+}

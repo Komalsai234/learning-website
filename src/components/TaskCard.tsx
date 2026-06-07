@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Video, CheckCircle2, Circle, ExternalLink, MoreVertical, Edit2, X, Clock, Trash2 } from 'lucide-react';
 
 import type { Task } from '@/types';
+import { VoiceNotePlayer } from './VoiceRecorder';
 
 function CardMenu({ btnRef, isOpen, onClose, onEdit, onDelete }: {
   btnRef: React.RefObject<HTMLButtonElement | null>;
@@ -71,36 +72,37 @@ function TaskDetailModal({ task, displayDate, displayTime, onClose }: {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-xl rounded-3xl overflow-hidden"
-        style={{ background: '#fdfaf6', boxShadow: '0 32px 80px rgba(44,24,16,0.28)', border: '1px solid #ddd0bc' }}
+        className="relative w-full max-w-3xl rounded-3xl overflow-hidden"
+        style={{ background: '#fdfaf6', boxShadow: '0 32px 80px rgba(44,24,16,0.28)', border: '1px solid #ddd0bc', minHeight: '460px' }}
         onClick={e => e.stopPropagation()}>
 
         {/* Header: date left, time badge right */}
-        <div className="px-6 py-4 flex items-center justify-between border-b border-[#e8ddd0]"
+        <div className="px-8 py-6 flex items-center justify-between border-b border-[#e8ddd0]"
           style={{ background: '#fdfaf6' }}>
           <div>
-            <div className="font-['Playfair_Display'] text-2xl font-bold leading-none" style={{ color: '#1e1208' }}>{displayDate}</div>
-            <div className="text-xs font-semibold uppercase tracking-widest mt-1" style={{ color: '#9a8878' }}>{task.day}</div>
+            <div className="font-['Playfair_Display'] text-3xl font-bold leading-none" style={{ color: '#1e1208' }}>{displayDate}</div>
+            <div className="text-xs font-semibold uppercase tracking-widest mt-1.5" style={{ color: '#9a8878' }}>{task.day}</div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold"
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold"
               style={{ background: 'linear-gradient(135deg, #ab6e47, #8b5a3c)', color: '#fff', boxShadow: '0 2px 8px rgba(139,90,60,0.28)' }}>
               <Clock className="w-3.5 h-3.5" /> {displayTime}
             </span>
             <button onClick={onClose}
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-[#7a6858] hover:bg-[#ab6e47] hover:text-white transition-all">
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#7a6858] hover:bg-[#ab6e47] hover:text-white transition-all">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6 space-y-5">
+        <div className="px-10 py-9 space-y-6">
           <div
-            className="px-5 py-4 rounded-2xl text-base text-[#1e1208] leading-relaxed quiz-answer-preview"
+            className="px-6 py-5 rounded-2xl text-base text-[#1e1208] leading-relaxed quiz-answer-preview"
             style={{ background: 'rgba(171,110,71,0.06)', border: '1.5px solid rgba(171,110,71,0.16)' }}
             dangerouslySetInnerHTML={{ __html: task.task || '' }}
           />
+          {task.voiceNote && <VoiceNotePlayer src={task.voiceNote} />}
         </div>
       </div>
     </div>,
