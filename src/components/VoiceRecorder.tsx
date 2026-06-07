@@ -162,7 +162,7 @@ export function VoiceNotePlayer({ src, index }: { src: string; index?: number })
       className="themed-audio"
       controlsList="nodownload"
       aria-label={index !== undefined ? `Voice Message ${index + 1}` : 'Voice Message'}
-      onLoadedMetadata={() => { if (audioRef.current) audioRef.current.playbackRate = 1.25; }}
+      onLoadedMetadata={() => { if (audioRef.current) audioRef.current.playbackRate = 1; }}
     />
   );
 }
