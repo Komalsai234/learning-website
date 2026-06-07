@@ -103,11 +103,6 @@ export function QuizDetailView({ quiz, onClose, onUpdateQuiz }: QuizDetailViewPr
     setRemarkDraft(prev => { const n = { ...prev }; delete n[qId]; return n; });
   };
 
-  const startEditRemark = (q: QuizQuestion) => {
-    setRemarkDraft(prev => ({ ...prev, [q.id]: q.remark ?? '' }));
-    setRemarkEditing(prev => new Set(prev).add(q.id));
-  };
-
   const cancelEditRemark = (qId: string) => {
     setRemarkEditing(prev => { const n = new Set(prev); n.delete(qId); return n; });
     setRemarkDraft(prev => { const n = { ...prev }; delete n[qId]; return n; });
