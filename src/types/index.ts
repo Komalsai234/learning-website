@@ -17,6 +17,7 @@ export interface Task {
   resources?: Resource[];
   status: TaskStatus;
   voiceNote?: string;
+  voiceNotes?: string[];
 }
 
 export interface Week {

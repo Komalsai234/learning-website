@@ -26,7 +26,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
   const [studyTime, setStudyTime] = useState('');
   const [description, setDescription] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
-  const [voiceNote, setVoiceNote] = useState<string | undefined>(undefined);
+  const [voiceNotes, setVoiceNotes] = useState<string[]>([]);
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
   const [meetLink, setMeetLink] = useState('');
@@ -35,7 +35,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
   useEffect(() => {
     if (isOpen) {
       setDate(''); setStudyTime(''); setDescription('');
-      setResources([]); setVoiceNote(undefined);
+      setResources([]); setVoiceNotes([]);
       setIsHoliday(false); setHasMeet(false); setMeetLink(''); setSaving(false);
     }
   }, [isOpen]);
@@ -80,7 +80,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
       meetLink: hasMeet && finalMeetLink ? finalMeetLink : undefined,
       resources: validResources.map(r => ({ url: r.url, label: r.label.trim() || 'Resource' })),
       status: isHoliday ? 'holiday' : 'todo',
-      ...(voiceNote ? { voiceNote } : {}),
+      ...(voiceNotes.length > 0 ? { voiceNotes } : {}),
     };
     onSave(newTask);
     onClose();
@@ -115,7 +115,7 @@ export function AddTaskModal({ isOpen, onClose, onSave }: AddTaskModalProps) {
 
           <div>
             <label className={labelCls}>Voice Message <span className="text-[#9a8878] font-normal normal-case">(optional)</span></label>
-            <VoiceRecorder value={voiceNote} onChange={setVoiceNote} />
+            <VoiceRecorder value={voiceNotes} onChange={setVoiceNotes} />
           </div>
 
           <div>

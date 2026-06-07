@@ -27,7 +27,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
   const [studyTime, setStudyTime] = useState('');
   const [description, setDescription] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
-  const [voiceNote, setVoiceNote] = useState<string | undefined>(undefined);
+  const [voiceNotes, setVoiceNotes] = useState<string[]>([]);
   const [isHoliday, setIsHoliday] = useState(false);
   const [hasMeet, setHasMeet] = useState(false);
   const [meetLink, setMeetLink] = useState('');
@@ -41,7 +41,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
       setHasMeet(task.hasMeet || false);
       setMeetLink(task.meetLink || '');
       setResources(task.resources || (task.resource ? [{ url: task.resource, label: 'Resource' }] : []));
-      setVoiceNote(task.voiceNote);
+      setVoiceNotes(task.voiceNotes || (task.voiceNote ? [task.voiceNote] : []));
     }
   }, [task, isOpen]);
 
@@ -84,7 +84,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
       meetLink: hasMeet && finalMeetLink ? finalMeetLink : undefined,
       resources: validResources.map(r => ({ url: r.url, label: r.label.trim() || 'Resource' })),
       status: isHoliday ? 'holiday' : task.status,
-      voiceNote: voiceNote || undefined,
+      voiceNotes: voiceNotes.length > 0 ? voiceNotes : undefined,
     };
     onSave(updatedTask);
     onClose();
@@ -111,6 +111,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
           <div>
             <label className={labelCls}>Task Description <span className="text-red-500">*</span></label>
             <RichTextEditor
+              key={`${task.date}-${task.day}`}
               value={description}
               onChange={setDescription}
               placeholder="Describe what you'll be learning…"
@@ -120,7 +121,7 @@ export function EditTaskModal({ isOpen, onClose, onSave, task }: EditTaskModalPr
 
           <div>
             <label className={labelCls}>Voice Message <span className="text-[#9a8878] font-normal normal-case">(optional)</span></label>
-            <VoiceRecorder value={voiceNote} onChange={setVoiceNote} />
+            <VoiceRecorder value={voiceNotes} onChange={setVoiceNotes} />
           </div>
 
           <div>

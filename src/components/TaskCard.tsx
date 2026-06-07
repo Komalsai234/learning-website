@@ -96,13 +96,29 @@ function TaskDetailModal({ task, displayDate, displayTime, onClose }: {
         </div>
 
         {/* Body */}
-        <div className="px-10 py-9 space-y-6">
-          <div
-            className="px-6 py-5 rounded-2xl text-base text-[#1e1208] leading-relaxed quiz-answer-preview"
-            style={{ background: 'rgba(171,110,71,0.06)', border: '1.5px solid rgba(171,110,71,0.16)' }}
-            dangerouslySetInnerHTML={{ __html: task.task || '' }}
-          />
-          {task.voiceNote && <VoiceNotePlayer src={task.voiceNote} />}
+        <div className="px-10 py-9 space-y-16">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#8b5a3c' }}>
+              Task Details
+            </p>
+            <div
+              className="px-6 py-5 rounded-2xl text-base text-[#1e1208] leading-relaxed quiz-answer-preview"
+              style={{ background: 'rgba(171,110,71,0.06)', border: '1.5px solid rgba(171,110,71,0.16)' }}
+              dangerouslySetInnerHTML={{ __html: task.task || '' }}
+            />
+          </div>
+          {(task.voiceNotes?.length || task.voiceNote) && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#8b5a3c' }}>
+                Voice Message{(task.voiceNotes?.length ?? 0) > 1 ? 's' : ''}
+              </p>
+              <div className="space-y-2">
+                {task.voiceNotes && task.voiceNotes.length > 0
+                  ? task.voiceNotes.map((src, i) => <VoiceNotePlayer key={src} src={src} index={i} />)
+                  : task.voiceNote ? <VoiceNotePlayer src={task.voiceNote} /> : null}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>,
