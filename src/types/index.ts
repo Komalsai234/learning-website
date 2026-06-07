@@ -13,8 +13,8 @@ export interface Task {
   isHoliday: boolean;
   hasMeet: boolean;
   meetLink?: string;
-  resource?: string;       // legacy single resource (kept for backward compat)
-  resources?: Resource[];  // new multiple resources
+  resource?: string;
+  resources?: Resource[];
   status: TaskStatus;
 }
 
@@ -44,4 +44,31 @@ export interface Message {
   text: string;
   read: boolean;
   replies: MessageReply[];
+}
+
+// ── Quiz ────────────────────────────────────────────────────────
+export type QuestionType = 'text' | 'single' | 'multiple';
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  type: QuestionType;
+  question: string;
+  options: QuizOption[];
+  required: boolean;
+  userAnswer: string | string[] | null;
+  remark?: string | null;
+}
+
+export interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+  createdAt: number;
 }

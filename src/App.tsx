@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Week, Task, Toast, TaskStatus, Message } from '@/types';
+import type { Week, Task, Toast, Message, Quiz } from '@/types';
 import { api, initDataListener } from '@/api';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
@@ -7,39 +7,48 @@ import { Greeting } from '@/components/Greeting';
 import { WeekCard } from '@/components/WeekCard';
 import { TasksPageView } from '@/components/TasksPageView';
 import { MessagesPage } from '@/components/MessagesPage';
+import { QuizPage } from '@/components/QuizPage';
+import { QuizDetailView } from '@/components/QuizDetailView';
+import { CreateQuizModal } from '@/components/CreateQuizModal';
 import { AddWeekModal } from '@/components/AddWeekModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
 import { EditTaskModal } from '@/components/EditTaskModal';
-import { StatusChangeModal } from '@/components/StatusChangeModal';
 import { ToastContainer } from '@/components/ToastContainer';
 import { EmptyState } from '@/components/EmptyState';
 import { Footer } from '@/components/Footer';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown } from 'lucide-react';
 
-type Page = 'weeks' | 'messages';
+const EXISTING_WEEKS_CUTOFF = new Date('2026-06-02').getTime();
+
+type Page = 'weeks' | 'messages' | 'quiz';
 
 function App() {
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('weeks');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddWeekModalOpen, setIsAddWeekModalOpen] = useState(false);
+  const [oldWeeksOpen, setOldWeeksOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isCreateQuizModalOpen, setIsCreateQuizModalOpen] = useState(false);
+  const [editingQuizId, setEditingQuizId] = useState<number | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState<number | null>(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [viewingWeekIndex, setViewingWeekIndex] = useState<number | null>(null);
+  const [viewingQuizId, setViewingQuizId] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Firebase real-time listener
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = initDataListener((weeksData, messagesData) => {
+    const unsubscribe = initDataListener((weeksData, messagesData, quizzesData) => {
       const sortedWeeks = [...weeksData].sort((a, b) => b.id - a.id);
       setWeeks(sortedWeeks);
       setMessages(messagesData);
+      setQuizzes(quizzesData);
       setIsLoading(false);
     });
     return () => unsubscribe();
@@ -71,7 +80,6 @@ function App() {
 
   const handleCloseTasksView = () => {
     setViewingWeekIndex(null);
-    // Replace state instead of going back — avoids double-tap on mobile
     window.history.replaceState(null, '', window.location.pathname);
   };
 
@@ -145,49 +153,91 @@ function App() {
     }
   };
 
-  const handleDeleteTask = async () => {
-    if (currentWeekIndex === null || currentTaskIndex === null) return;
+
+
+  const handleDirectDeleteTask = async (weekIndex: number, taskIndex: number) => {
+    if (!confirm('Delete this task?')) return;
     try {
-      const week = weeks[currentWeekIndex];
+      const week = weeks[weekIndex];
       if (!week) return;
-      await api.deleteTask(week.id, currentTaskIndex);
+      await api.deleteTask(week.id, taskIndex);
       showToast('Task deleted', '🗑️');
-      setIsEditTaskModalOpen(false);
-      setCurrentWeekIndex(null);
-      setCurrentTaskIndex(null);
     } catch {
       showToast('Failed to delete task', '❌');
     }
   };
 
-  const handleChangeStatus = async (status: TaskStatus) => {
-    if (currentWeekIndex === null || currentTaskIndex === null) return;
+  const handleUpdateTask = async (weekIndex: number, taskIndex: number, updatedTask: Task) => {
+    const week = weeks[weekIndex];
+    if (!week) return;
+    // Optimistic update — reflect change immediately in UI
+    setWeeks(prev => prev.map((w, wi) =>
+      wi === weekIndex
+        ? { ...w, tasks: w.tasks.map((t, ti) => ti === taskIndex ? updatedTask : t) }
+        : w
+    ));
     try {
-      const week = weeks[currentWeekIndex];
-      if (!week) return;
-      await api.updateTaskStatus(week.id, currentTaskIndex, status);
-      const msgs: Record<string, string> = {
-        todo: 'Task marked as To Do',
-        completed: 'Great job! Task completed! 🎉',
-        holiday: 'Marked as holiday',
-      };
-      showToast(msgs[status] ?? 'Status updated', status === 'completed' ? '✅' : '⏳');
+      await api.updateTask(week.id, taskIndex, updatedTask);
     } catch {
-      showToast('Failed to update status', '❌');
+      showToast('Failed to update task', '❌');
+      // Re-fetch from cache to revert optimistic update
+      setWeeks(prev => [...prev]);
+    }
+  };
+
+  // Quiz handlers
+  const handleCreateQuiz = async (data: { title: string; description: string; questions: any[] }) => {
+    try {
+      await api.createQuiz(data);
+      showToast('Quiz created!', '🎉');
+    } catch {
+      showToast('Failed to create quiz', '❌');
+    }
+  };
+
+  const handleDeleteQuiz = async (quizId: number) => {
+    if (!confirm('Delete this quiz? This cannot be undone.')) return;
+    try {
+      await api.deleteQuiz(quizId);
+      showToast('Quiz deleted', '🗑️');
+    } catch {
+      showToast('Failed to delete quiz', '❌');
+    }
+  };
+
+  const handleUpdateQuiz = async (quiz: Quiz) => {
+    try {
+      await api.updateQuiz(quiz);
+    } catch {
+      showToast('Failed to save answers', '❌');
+    }
+  };
+
+  const handleEditQuizSave = async (data: { title: string; description: string; questions: any[] }) => {
+    if (editingQuizId === null) return;
+    const quiz = quizzes.find(q => q.id === editingQuizId);
+    if (!quiz) return;
+    try {
+      await api.updateQuiz({ ...quiz, ...data });
+      showToast('Quiz updated!', '✏️');
+      setEditingQuizId(null);
+    } catch {
+      showToast('Failed to update quiz', '❌');
     }
   };
 
   const openAddTaskModal = (weekIndex: number) => { setCurrentWeekIndex(weekIndex); setIsAddTaskModalOpen(true); };
   const openEditTaskModal = (weekIndex: number, taskIndex: number) => { setCurrentWeekIndex(weekIndex); setCurrentTaskIndex(taskIndex); setIsEditTaskModalOpen(true); };
-  const openStatusModal = (weekIndex: number, taskIndex: number) => { setCurrentWeekIndex(weekIndex); setCurrentTaskIndex(taskIndex); setIsStatusModalOpen(true); };
   const closeAddTaskModal = () => { setIsAddTaskModalOpen(false); setCurrentWeekIndex(null); };
   const closeEditTaskModal = () => { setIsEditTaskModalOpen(false); setCurrentWeekIndex(null); setCurrentTaskIndex(null); };
-  const closeStatusModal = () => { setIsStatusModalOpen(false); setCurrentWeekIndex(null); setCurrentTaskIndex(null); };
 
   const viewingWeek: Week | null =
     viewingWeekIndex !== null && viewingWeekIndex >= 0 && viewingWeekIndex < weeks.length
       ? weeks[viewingWeekIndex] : null;
   const isViewingTasks = viewingWeek !== null;
+
+  const viewingQuiz: Quiz | null = viewingQuizId !== null
+    ? quizzes.find(q => q.id === viewingQuizId) ?? null : null;
 
   const currentTask: Task | null =
     currentWeekIndex !== null && currentTaskIndex !== null && weeks[currentWeekIndex]?.tasks?.[currentTaskIndex]
@@ -197,28 +247,45 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f4ede4] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede3' }}>
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 text-[#ab6e47] animate-spin" />
-          <p className="text-[#5c4a3a] font-medium">Loading...</p>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #c28659, #8b5a3c)' }}>
+            <Loader2 className="w-7 h-7 text-white animate-spin" />
+          </div>
+          <p className="text-[#4a3728] font-semibold text-sm">Loading your learning journey…</p>
         </div>
       </div>
     );
   }
 
+  // Full-screen overlays: quiz detail and tasks view
+  if (viewingQuiz) {
+    return (
+      <>
+        <QuizDetailView
+          quiz={viewingQuiz}
+          onClose={() => setViewingQuizId(null)}
+          onUpdateQuiz={handleUpdateQuiz}
+        />
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+      </>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f4ede4]">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#f4ede4] to-[#ece4da]">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-[#ab6e47]/10 rounded-full blur-3xl animate-[float_20s_infinite_ease-in-out]" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#c28659]/10 rounded-full blur-3xl animate-[float_25s_infinite_ease-in-out_-5s]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#9b6b4f]/10 rounded-full blur-3xl animate-[float_18s_infinite_ease-in-out_-10s]" />
+    <div className="min-h-screen" style={{ background: '#f5ede3' }}>
+      <div className="fixed inset-0 -z-10" style={{ background: 'linear-gradient(160deg, #f5ede3 0%, #ede4d5 100%)' }}>
+        <div className="absolute top-20 left-10 w-80 h-80 rounded-full opacity-60" style={{ background: 'radial-gradient(circle, rgba(194,134,89,0.12) 0%, transparent 70%)', filter: 'blur(40px)', animation: 'float 22s ease-in-out infinite' }} />
+        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-60" style={{ background: 'radial-gradient(circle, rgba(171,110,71,0.10) 0%, transparent 70%)', filter: 'blur(50px)', animation: 'float 28s ease-in-out infinite -6s' }} />
+        <div className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, rgba(155,107,79,0.10) 0%, transparent 70%)', filter: 'blur(40px)', animation: 'float 20s ease-in-out infinite -12s' }} />
       </div>
 
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         currentPage={currentPage}
-        onNavigate={(page: string) => { setCurrentPage(page as Page); setSidebarOpen(false); }}
+        onNavigate={(page: string) => { setCurrentPage(page as Page); setSidebarOpen(false); setViewingWeekIndex(null); }}
         onNewWeek={() => { setSidebarOpen(false); setIsAddWeekModalOpen(true); }}
         unreadCount={unreadCount}
       />
@@ -238,33 +305,81 @@ function App() {
           onClose={handleCloseTasksView}
           onAddTask={openAddTaskModal}
           onEditTask={openEditTaskModal}
-          onChangeStatus={openStatusModal}
+          onUpdateTask={handleUpdateTask}
+          onDeleteTask={handleDirectDeleteTask}
         />
       ) : currentPage === 'messages' ? (
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
           <MessagesPage messages={messages} onSaveMessages={saveMessages} />
-          <Footer />
+        </main>
+      ) : currentPage === 'quiz' ? (
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
+          <QuizPage
+            quizzes={quizzes}
+            onCreateQuiz={() => setIsCreateQuizModalOpen(true)}
+            onViewQuiz={id => setViewingQuizId(id)}
+            onEditQuiz={id => setEditingQuizId(id)}
+            onDeleteQuiz={handleDeleteQuiz}
+          />
         </main>
       ) : (
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
           <Greeting />
           {weeks.length === 0 ? (
             <EmptyState />
-          ) : (
-            <div className="space-y-8">
-              {weeks.map((week, index) => (
-                <WeekCard key={week.id} week={week} weekIndex={index} onViewTasks={handleViewTasks} onDeleteWeek={handleDeleteWeek} />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            const newWeeks = weeks.filter(w => w.id >= EXISTING_WEEKS_CUTOFF);
+            const oldWeeks = weeks.filter(w => w.id < EXISTING_WEEKS_CUTOFF);
+            return (
+              <div className="space-y-8">
+                {newWeeks.map(week => (
+                  <WeekCard key={week.id} week={week} weekIndex={weeks.indexOf(week)} onViewTasks={handleViewTasks} onDeleteWeek={handleDeleteWeek} />
+                ))}
+
+                {oldWeeks.length > 0 && (
+                  <div className="rounded-2xl overflow-hidden"
+                    style={{ border: '1px solid #ddd0bc', background: 'linear-gradient(160deg, #fdfaf6 0%, #faf5ee 100%)', boxShadow: '0 2px 12px rgba(44,24,16,0.07)' }}>
+                    <button
+                      onClick={() => setOldWeeksOpen(v => !v)}
+                      className="w-full flex items-center justify-between px-6 py-4 transition-colors duration-200 hover:bg-[#f0e6da]">
+                      <div className="flex items-center gap-3">
+                        <span className="font-['Playfair_Display'] font-bold text-lg text-[#1e1208]">Previous Works</span>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ background: 'rgba(171,110,71,0.12)', color: '#8b5a3c' }}>
+                          {oldWeeks.length}
+                        </span>
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-[#8b5a3c] transition-transform duration-300"
+                        style={{ transform: oldWeeksOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                    </button>
+
+                    {oldWeeksOpen && (
+                      <div className="px-6 pb-6 space-y-6 border-t border-[#e8ddd0] pt-6">
+                        {oldWeeks.map(week => (
+                          <WeekCard key={week.id} week={week} weekIndex={weeks.indexOf(week)} onViewTasks={handleViewTasks} onDeleteWeek={handleDeleteWeek} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <Footer />
         </main>
       )}
 
       <AddWeekModal isOpen={isAddWeekModalOpen} onClose={() => setIsAddWeekModalOpen(false)} onSave={handleAddWeek} />
       <AddTaskModal isOpen={isAddTaskModalOpen} onClose={closeAddTaskModal} onSave={handleAddTask} />
-      <EditTaskModal isOpen={isEditTaskModalOpen} onClose={closeEditTaskModal} onSave={handleEditTask} onDelete={handleDeleteTask} task={currentTask} />
-      <StatusChangeModal isOpen={isStatusModalOpen} onClose={closeStatusModal} onChangeStatus={handleChangeStatus} />
+      <EditTaskModal isOpen={isEditTaskModalOpen} onClose={closeEditTaskModal} onSave={handleEditTask} task={currentTask} />
+      <CreateQuizModal isOpen={isCreateQuizModalOpen} onClose={() => setIsCreateQuizModalOpen(false)} onSave={handleCreateQuiz} />
+      <CreateQuizModal
+        key={editingQuizId ?? 'edit-closed'}
+        isOpen={editingQuizId !== null}
+        onClose={() => setEditingQuizId(null)}
+        onSave={handleEditQuizSave}
+        initialData={editingQuizId !== null ? quizzes.find(q => q.id === editingQuizId) : undefined}
+      />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );

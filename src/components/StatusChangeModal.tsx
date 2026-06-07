@@ -1,4 +1,4 @@
-import { X, Circle, CheckCircle2 } from 'lucide-react';
+import { X, Circle, CheckCircle2, RotateCcw } from 'lucide-react';
 import type { TaskStatus } from '@/types';
 
 interface StatusChangeModalProps {
@@ -7,40 +7,88 @@ interface StatusChangeModalProps {
   onChangeStatus: (status: TaskStatus) => void;
 }
 
+const options = [
+  {
+    status: 'todo' as TaskStatus,
+    icon: Circle,
+    label: 'To Do',
+    description: 'Mark this task as pending',
+    color: '#d97706',
+    bg: 'rgba(217,119,6,0.06)',
+    border: 'rgba(217,119,6,0.22)',
+    hoverBg: 'linear-gradient(135deg, #d97706, #b45309)',
+  },
+  {
+    status: 'completed' as TaskStatus,
+    icon: CheckCircle2,
+    label: 'Completed',
+    description: 'Great job! Mark as done',
+    color: '#059669',
+    bg: 'rgba(5,150,105,0.06)',
+    border: 'rgba(5,150,105,0.22)',
+    hoverBg: 'linear-gradient(135deg, #059669, #047857)',
+  },
+];
+
 export function StatusChangeModal({ isOpen, onClose, onChangeStatus }: StatusChangeModalProps) {
   if (!isOpen) return null;
 
-  const handleStatusChange = (status: TaskStatus) => {
-    onChangeStatus(status);
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="bg-[#faf7f2] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-[slideInDown_0.4s_cubic-bezier(0.4,0,0.2,1)]">
-          <div className="bg-gradient-to-r from-[#ab6e47] to-[#9b6b4f] px-6 py-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Change Status</h2>
-            <button onClick={onClose}
-              className="inline-flex items-center justify-center w-9 h-9 text-white hover:bg-white/20 rounded-xl transition-all duration-200">
-              <X className="w-5 h-5" />
-            </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative w-full max-w-sm animate-scaleIn rounded-2xl overflow-hidden"
+        style={{ boxShadow: '0 24px 60px rgba(44,24,16,0.22), 0 8px 24px rgba(44,24,16,0.12)' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4"
+          style={{ background: 'linear-gradient(135deg, #ab6e47, #8b5a3c)' }}>
+          <div>
+            <h2 className="font-['Playfair_Display'] text-lg font-bold text-white">Update Status</h2>
+            <p className="text-xs text-white/70 mt-0.5">Choose the new status for this task</p>
           </div>
-          <div className="p-6 space-y-3">
-            <button
-              onClick={() => handleStatusChange('todo')}
-              className="w-full p-4 border-2 border-[#c28659] rounded-xl font-semibold text-base inline-flex items-center gap-4 bg-[#faf7f2] text-[#5c4a3a] hover:bg-gradient-to-r hover:from-[#c28659] hover:to-[#ab6e47] hover:text-white hover:border-[#ab6e47] transition-all duration-200 hover:translate-x-1 shadow-sm"
-            >
-              <Circle className="w-5 h-5" /> To Do
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all duration-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Options */}
+        <div className="p-4 space-y-3" style={{ background: '#fdfaf6' }}>
+          {options.map(({ status, icon: Icon, label, description, color, bg, border, hoverBg }) => (
+            <button key={status} onClick={() => { onChangeStatus(status); onClose(); }}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group"
+              style={{ background: bg, border: `1.5px solid ${border}` }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = hoverBg;
+                e.currentTarget.querySelector('.status-text')!.setAttribute('style', 'color: #fff');
+                e.currentTarget.querySelector('.status-desc')!.setAttribute('style', 'color: rgba(255,255,255,0.75)');
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = bg;
+                e.currentTarget.querySelector('.status-text')!.setAttribute('style', `color: ${color}`);
+                e.currentTarget.querySelector('.status-desc')!.setAttribute('style', 'color: #7a6858');
+              }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                style={{ background: `${color}18` }}>
+                <Icon className="w-5 h-5" style={{ color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="status-text text-sm font-bold transition-colors duration-200" style={{ color }}>{label}</div>
+                <div className="status-desc text-xs mt-0.5 transition-colors duration-200" style={{ color: '#7a6858' }}>{description}</div>
+              </div>
+              <RotateCcw className="w-4 h-4 opacity-40 group-hover:opacity-80 transition-opacity duration-200 flex-shrink-0" style={{ color }} />
             </button>
-            <button
-              onClick={() => handleStatusChange('completed')}
-              className="w-full p-4 border-2 border-emerald-400 rounded-xl font-semibold text-base inline-flex items-center gap-4 bg-[#faf7f2] text-[#5c4a3a] hover:bg-gradient-to-r hover:from-emerald-500 hover:to-emerald-600 hover:text-white hover:border-emerald-500 transition-all duration-200 hover:translate-x-1 shadow-sm"
-            >
-              <CheckCircle2 className="w-5 h-5" /> Completed
-            </button>
-          </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 pb-4" style={{ background: '#fdfaf6' }}>
+          <button onClick={onClose}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold text-[#7a6858] hover:bg-[#ede4d8] transition-all duration-200 border"
+            style={{ border: '1px solid #ddd0bc' }}>
+            Cancel
+          </button>
         </div>
       </div>
     </div>
