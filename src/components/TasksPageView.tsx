@@ -13,7 +13,13 @@ interface TasksPageViewProps {
 }
 
 export function TasksPageView({ week, weekIndex, onClose, onAddTask, onEditTask, onUpdateTask, onDeleteTask }: TasksPageViewProps) {
-  const tasks = week.tasks || [];
+  const sortedTasks = (week.tasks || [])
+    .map((task, originalIndex) => ({ task, originalIndex }))
+    .sort((a, b) => {
+      if (!a.task.date) return 1;
+      if (!b.task.date) return -1;
+      return a.task.date.localeCompare(b.task.date);
+    });
 
 
   return (
@@ -63,7 +69,7 @@ export function TasksPageView({ week, weekIndex, onClose, onAddTask, onEditTask,
 
       {/* Content */}
       <div className="w-full px-5 sm:px-10 lg:px-16 py-8">
-        {tasks.length === 0 ? (
+        {sortedTasks.length === 0 ? (
           <div className="max-w-md mx-auto text-center py-20 rounded-2xl border"
             style={{ background: 'rgba(253,250,246,0.70)', border: '1px solid #ddd0bc' }}>
             <div className="text-6xl mb-5">📝</div>
@@ -77,8 +83,8 @@ export function TasksPageView({ week, weekIndex, onClose, onAddTask, onEditTask,
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7 pb-28">
-            {tasks.map((task, taskIndex) => (
-              <TaskCard key={taskIndex} task={task} weekIndex={weekIndex} taskIndex={taskIndex}
+            {sortedTasks.map(({ task, originalIndex }) => (
+              <TaskCard key={originalIndex} task={task} weekIndex={weekIndex} taskIndex={originalIndex}
                 onEdit={onEditTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />
             ))}
           </div>
@@ -86,7 +92,7 @@ export function TasksPageView({ week, weekIndex, onClose, onAddTask, onEditTask,
       </div>
 
       {/* FAB */}
-      {tasks.length > 0 && (
+      {sortedTasks.length > 0 && (
         <button onClick={() => onAddTask(weekIndex)}
           className="fixed bottom-7 right-7 w-14 h-14 rounded-2xl text-white flex items-center justify-center z-50 transition-all duration-300 hover:scale-110 hover:rotate-90 active:scale-95"
           style={{
