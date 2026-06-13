@@ -24,16 +24,17 @@ export function WeekCard({ week, weekIndex, onViewTasks, onDeleteWeek }: WeekCar
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
   const tasks = week.tasks || [];
-  const completed = tasks.filter(t => t.status === 'completed').length;
-  const pending = tasks.filter(t => t.status === 'todo').length;
-  const holidays = tasks.filter(t => t.isHoliday || t.status === 'holiday').length;
-  const total = tasks.length;
+  const totalDays = tasks.length;
+  const nonHolidayTasks = tasks.filter(t => !t.isHoliday && t.status !== 'holiday');
+  const totalTasks = nonHolidayTasks.length;
+  const completed = nonHolidayTasks.filter(t => t.status === 'completed').length;
+  const pending = nonHolidayTasks.filter(t => t.status === 'todo').length;
 
   const stats = [
-    { label: 'Completed',  value: completed },
-    { label: 'Pending',    value: pending },
-    { label: 'Holidays',   value: holidays },
-    { label: 'Total Tasks', value: total },
+    { label: 'Total Days',  value: totalDays },
+    { label: 'Total Tasks', value: totalTasks },
+    { label: 'Completed',   value: completed },
+    { label: 'Pending',     value: pending },
   ];
 
   return (
