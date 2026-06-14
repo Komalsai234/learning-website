@@ -24,7 +24,11 @@ export function WeekCard({ week, weekIndex, onViewTasks, onDeleteWeek }: WeekCar
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
   const tasks = week.tasks || [];
-  const totalDays = tasks.length;
+  const [startStr, endStr] = week.dates.split(' - ');
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const totalDays = startStr && endStr
+    ? Math.round((new Date(endStr).getTime() - new Date(startStr).getTime()) / msPerDay) + 1
+    : tasks.length;
   const nonHolidayTasks = tasks.filter(t => !t.isHoliday && t.status !== 'holiday');
   const totalTasks = nonHolidayTasks.length;
   const completed = nonHolidayTasks.filter(t => t.status === 'completed').length;
