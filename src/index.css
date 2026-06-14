@@ -189,3 +189,29 @@
 .themed-audio::-webkit-media-controls-volume-slider {
   accent-color: #ab6e47;
 }
+
+/* Project markdown renderer */
+.prose-project { color: #1e1208; line-height: 1.8; font-size: 0.95rem; }
+.prose-project h1 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #1e1208; margin: 0 0 1rem; border-bottom: 2px solid #e8ddd0; padding-bottom: 0.5rem; }
+.prose-project h2 { font-family: 'Playfair Display', serif; font-size: 1.45rem; font-weight: 700; color: #2c1a10; margin: 2rem 0 0.75rem; }
+.prose-project h3 { font-size: 1.15rem; font-weight: 700; color: #3a2418; margin: 1.5rem 0 0.5rem; }
+.prose-project h4 { font-size: 1rem; font-weight: 700; color: #4a3728; margin: 1.25rem 0 0.4rem; }
+.prose-project p { margin: 0 0 1rem; }
+.prose-project ul, .prose-project ol { margin: 0 0 1rem 1.5rem; }
+.prose-project ul { list-style: disc; }
+.prose-project ol { list-style: decimal; }
+.prose-project li { margin-bottom: 0.3rem; }
+.prose-project a { color: #ab6e47; text-decoration: underline; text-underline-offset: 2px; }
+.prose-project a:hover { color: #8b5a3c; }
+.prose-project strong { font-weight: 700; color: #1e1208; }
+.prose-project em { font-style: italic; }
+.prose-project code { font-size: 0.85em; background: rgba(171,110,71,0.10); color: #8b5a3c; padding: 0.15em 0.4em; border-radius: 6px; font-family: 'Courier New', monospace; }
+.prose-project pre { background: #1e1208; border-radius: 14px; padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1rem 0 1.5rem; }
+.prose-project pre code { background: transparent; color: #f5ede3; padding: 0; font-size: 0.88rem; }
+.prose-project blockquote { border-left: 4px solid #ab6e47; margin: 1rem 0; padding: 0.5rem 1.25rem; background: rgba(171,110,71,0.06); border-radius: 0 10px 10px 0; color: #5a3820; font-style: italic; }
+.prose-project hr { border: none; border-top: 1.5px solid #e8ddd0; margin: 2rem 0; }
+.prose-project table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+.prose-project th { background: rgba(171,110,71,0.12); color: #4a3728; font-weight: 700; padding: 0.6rem 1rem; text-align: left; border: 1px solid #ddd0bc; }
+.prose-project td { padding: 0.55rem 1rem; border: 1px solid #e8ddd0; vertical-align: top; }
+.prose-project tr:nth-child(even) td { background: rgba(171,110,71,0.04); }
+.prose-project img { max-width: 100%; border-radius: 12px; margin: 1rem 0; }

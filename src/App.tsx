@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Week, Task, Toast, Message, Quiz } from '@/types';
+import type { Week, Task, Toast, Message, Quiz, Project } from '@/types';
 import { api, initDataListener } from '@/api';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
@@ -10,6 +10,9 @@ import { MessagesPage } from '@/components/MessagesPage';
 import { QuizPage } from '@/components/QuizPage';
 import { QuizDetailView } from '@/components/QuizDetailView';
 import { CreateQuizModal } from '@/components/CreateQuizModal';
+import { ProjectsPage } from '@/components/ProjectsPage';
+import { ProjectDetailView } from '@/components/ProjectDetailView';
+import { AddProjectModal } from '@/components/AddProjectModal';
 import { AddWeekModal } from '@/components/AddWeekModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
 import { EditTaskModal } from '@/components/EditTaskModal';
@@ -20,12 +23,13 @@ import { Loader2, ChevronDown } from 'lucide-react';
 
 const EXISTING_WEEKS_CUTOFF = new Date('2026-06-02').getTime();
 
-type Page = 'weeks' | 'messages' | 'quiz';
+type Page = 'weeks' | 'messages' | 'quiz' | 'projects';
 
 function App() {
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('weeks');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +39,8 @@ function App() {
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [isCreateQuizModalOpen, setIsCreateQuizModalOpen] = useState(false);
   const [editingQuizId, setEditingQuizId] = useState<number | null>(null);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState<number | null>(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [viewingWeekIndex, setViewingWeekIndex] = useState<number | null>(null);
@@ -44,11 +50,12 @@ function App() {
   // Firebase real-time listener
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = initDataListener((weeksData, messagesData, quizzesData) => {
+    const unsubscribe = initDataListener((weeksData, messagesData, quizzesData, projectsData) => {
       const sortedWeeks = [...weeksData].sort((a, b) => b.id - a.id);
       setWeeks(sortedWeeks);
       setMessages(messagesData);
       setQuizzes(quizzesData);
+      setProjects([...projectsData].sort((a, b) => b.createdAt - a.createdAt));
       setIsLoading(false);
     });
     return () => unsubscribe();
@@ -226,6 +233,34 @@ function App() {
     }
   };
 
+  const handleCreateProject = async (data: { name: string; content: string }) => {
+    try {
+      await api.createProject(data);
+      showToast('Project created!', '🎉');
+    } catch {
+      showToast('Failed to create project', '❌');
+    }
+  };
+
+  const handleModifyProject = async (projectId: number, content: string) => {
+    try {
+      await api.updateProject(projectId, content);
+      showToast('Project updated!', '✏️');
+    } catch {
+      showToast('Failed to update project', '❌');
+    }
+  };
+
+  const handleDeleteProject = async (projectId: number) => {
+    if (!confirm('Delete this project? This cannot be undone.')) return;
+    try {
+      await api.deleteProject(projectId);
+      showToast('Project deleted', '🗑️');
+    } catch {
+      showToast('Failed to delete project', '❌');
+    }
+  };
+
   const openAddTaskModal = (weekIndex: number) => { setCurrentWeekIndex(weekIndex); setIsAddTaskModalOpen(true); };
   const openEditTaskModal = (weekIndex: number, taskIndex: number) => { setCurrentWeekIndex(weekIndex); setCurrentTaskIndex(taskIndex); setIsEditTaskModalOpen(true); };
   const closeAddTaskModal = () => { setIsAddTaskModalOpen(false); setCurrentWeekIndex(null); };
@@ -259,7 +294,16 @@ function App() {
     );
   }
 
-  // Full-screen overlays: quiz detail and tasks view
+  // Full-screen overlays: quiz detail, project detail, and tasks view
+  if (viewingProject) {
+    return (
+      <>
+        <ProjectDetailView project={viewingProject} onClose={() => setViewingProject(null)} />
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+      </>
+    );
+  }
+
   if (viewingQuiz) {
     return (
       <>
@@ -322,6 +366,16 @@ function App() {
             onDeleteQuiz={handleDeleteQuiz}
           />
         </main>
+      ) : currentPage === 'projects' ? (
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
+          <ProjectsPage
+            projects={projects}
+            onCreateProject={() => setIsAddProjectModalOpen(true)}
+            onViewProject={setViewingProject}
+            onModifyProject={handleModifyProject}
+            onDeleteProject={handleDeleteProject}
+          />
+        </main>
       ) : (
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
           <Greeting />
@@ -379,6 +433,11 @@ function App() {
         onClose={() => setEditingQuizId(null)}
         onSave={handleEditQuizSave}
         initialData={editingQuizId !== null ? quizzes.find(q => q.id === editingQuizId) : undefined}
+      />
+      <AddProjectModal
+        isOpen={isAddProjectModalOpen}
+        onClose={() => setIsAddProjectModalOpen(false)}
+        onSave={handleCreateProject}
       />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>

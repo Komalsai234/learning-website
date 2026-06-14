@@ -1,4 +1,4 @@
-import { X, CalendarDays, MessageSquare, Plus, BookOpen, ClipboardList } from 'lucide-react';
+import { X, CalendarDays, MessageSquare, Plus, BookOpen, ClipboardList, Layers } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SidebarProps {
@@ -71,6 +71,7 @@ export function Sidebar({ isOpen, onClose, currentPage, onNavigate, onNewWeek, u
             { page: 'weeks', label: 'Learning Weeks', icon: CalendarDays, badge: null },
             { page: 'messages', label: 'Messages', icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
             { page: 'quiz', label: 'Quizzes', icon: ClipboardList, badge: null },
+            { page: 'projects', label: 'Projects', icon: Layers, badge: null },
           ].map(({ page, label, icon: Icon, badge }) => {
             const active = currentPage === page;
             return (

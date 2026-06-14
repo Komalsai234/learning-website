@@ -74,3 +74,10 @@ export interface Quiz {
   questions: QuizQuestion[];
   createdAt: number;
 }
+
+export interface Project {
+  id: number;
+  name: string;
+  content: string;
+  createdAt: number;
+}

@@ -1,10 +1,11 @@
-import type { Week, Task, TaskStatus, Message, Quiz, QuizQuestion } from '@/types';
+import type { Week, Task, TaskStatus, Message, Quiz, QuizQuestion, Project } from '@/types';
 import { getSharedDataRef } from '@/firebase';
 import { setDoc, onSnapshot } from 'firebase/firestore';
 
 let memoryCache: Week[] = [];
 let messageCache: Message[] = [];
 let quizCache: Quiz[] = [];
+let projectCache: Project[] = [];
 let unsubscribe: (() => void) | null = null;
 
 const removeUndefined = (obj: any): any => {
@@ -21,7 +22,7 @@ const removeUndefined = (obj: any): any => {
   return obj;
 };
 
-export const initDataListener = (callback: (weeks: Week[], messages: Message[], quizzes: Quiz[]) => void) => {
+export const initDataListener = (callback: (weeks: Week[], messages: Message[], quizzes: Quiz[], projects: Project[]) => void) => {
   if (unsubscribe) unsubscribe();
   const sharedRef = getSharedDataRef();
   unsubscribe = onSnapshot(sharedRef, (doc) => {
@@ -30,14 +31,15 @@ export const initDataListener = (callback: (weeks: Week[], messages: Message[], 
       memoryCache = data.weeks || [];
       messageCache = data.messages || [];
       quizCache = data.quizzes || [];
-      callback(memoryCache, messageCache, quizCache);
+      projectCache = data.projects || [];
+      callback(memoryCache, messageCache, quizCache, projectCache);
     } else {
-      memoryCache = []; messageCache = []; quizCache = [];
-      callback([], [], []);
+      memoryCache = []; messageCache = []; quizCache = []; projectCache = [];
+      callback([], [], [], []);
     }
   }, (error) => {
     console.error('Firebase listener error:', error);
-    callback(memoryCache, messageCache, quizCache);
+    callback(memoryCache, messageCache, quizCache, projectCache);
   });
   return unsubscribe;
 };
@@ -45,17 +47,20 @@ export const initDataListener = (callback: (weeks: Week[], messages: Message[], 
 const getData = (): Week[] => memoryCache;
 const getMessages = (): Message[] => messageCache;
 const getQuizzes = (): Quiz[] => quizCache;
+const getProjects = (): Project[] => projectCache;
 
-const saveData = async (weeks: Week[], messages?: Message[], quizzes?: Quiz[]) => {
+const saveData = async (weeks: Week[], messages?: Message[], quizzes?: Quiz[], projects?: Project[]) => {
   memoryCache = weeks;
   if (messages !== undefined) messageCache = messages;
   if (quizzes !== undefined) quizCache = quizzes;
+  if (projects !== undefined) projectCache = projects;
   try {
     const sharedRef = getSharedDataRef();
     await setDoc(sharedRef, {
       weeks: removeUndefined(weeks),
       messages: removeUndefined(messages !== undefined ? messages : messageCache),
       quizzes: removeUndefined(quizzes !== undefined ? quizzes : quizCache),
+      projects: removeUndefined(projects !== undefined ? projects : projectCache),
       lastUpdated: Date.now(),
     });
   } catch (e) {
@@ -188,5 +193,23 @@ export const api = {
 
   async deleteQuiz(quizId: number): Promise<void> {
     await saveData(getData(), getMessages(), getQuizzes().filter(q => q.id !== quizId));
+  },
+
+  // ── Projects ───────────────────────────────────────────────────
+  async getProjects(): Promise<Project[]> { return getProjects(); },
+
+  async createProject(data: { name: string; content: string }): Promise<Project> {
+    const project: Project = { id: Date.now(), name: data.name, content: data.content, createdAt: Date.now() };
+    await saveData(getData(), getMessages(), getQuizzes(), [...getProjects(), project]);
+    return project;
+  },
+
+  async updateProject(projectId: number, content: string): Promise<void> {
+    const updated = getProjects().map(p => p.id === projectId ? { ...p, content } : p);
+    await saveData(getData(), getMessages(), getQuizzes(), updated);
+  },
+
+  async deleteProject(projectId: number): Promise<void> {
+    await saveData(getData(), getMessages(), getQuizzes(), getProjects().filter(p => p.id !== projectId));
   },
 };
